@@ -45,11 +45,11 @@ async function start() {
     console.warn('WARNING: Database connection failed. Server starting anyway.');
   }
 
-  app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-    console.log(`Health check: http://localhost:${PORT}/api/health`);
-    console.log(`Schema endpoint: http://localhost:${PORT}/api/schema`);
-  });
+      app.listen(PORT, '0.0.0.0', () => {
+        console.log(`Server running on http://0.0.0.0:${PORT}`);
+        console.log(`Health check: http://0.0.0.0:${PORT}/api/health`);
+        console.log(`Schema endpoint: http://0.0.0.0:${PORT}/api/schema`);
+      });
 }
 
 start();
