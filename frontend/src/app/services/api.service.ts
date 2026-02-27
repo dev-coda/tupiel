@@ -14,9 +14,13 @@ import { DashboardData } from '../models/dashboard.model';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
-  private readonly baseUrl = '/api';
+  private readonly baseUrl: string;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) {
+    // Get API URL from window config (set by environment variable or default to /api)
+    const config = (window as any).APP_CONFIG;
+    this.baseUrl = config?.apiUrl || '/api';
+  }
 
   getHealth(): Observable<HealthResponse> {
     return this.http.get<HealthResponse>(`${this.baseUrl}/health`);

@@ -33,6 +33,14 @@ COPY --from=builder /app/dist/frontend /usr/share/nginx/html
 # Copy nginx config
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
+# Create entrypoint script to inject API URL
+RUN echo '#!/bin/sh' > /docker-entrypoint.d/99-inject-api-url.sh && \
+    echo 'if [ ! -z "$VITE_API_URL" ]; then' >> /docker-entrypoint.d/99-inject-api-url.sh && \
+    echo '  sed -i "s|window.APP_CONFIG = { apiUrl:.*}|window.APP_CONFIG = { apiUrl: \"$VITE_API_URL\" }|g" /usr/share/nginx/html/index.html || true' >> /docker-entrypoint.d/99-inject-api-url.sh && \
+    echo '  sed -i "s|<script>|\\n<script>window.APP_CONFIG = { apiUrl: \"$VITE_API_URL\" };|g" /usr/share/nginx/html/index.html || true' >> /docker-entrypoint.d/99-inject-api-url.sh && \
+    echo 'fi' >> /docker-entrypoint.d/99-inject-api-url.sh && \
+    chmod +x /docker-entrypoint.d/99-inject-api-url.sh
+
 EXPOSE 80
 
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["/bin/sh", "-c", "if [ ! -z \"$VITE_API_URL\" ]; then sed -i \"s|window.APP_CONFIG = { apiUrl:.*}|window.APP_CONFIG = { apiUrl: \\\"$VITE_API_URL\\\" }|g\" /usr/share/nginx/html/index.html || sed -i \"s|<head>|<head>\\n  <script>window.APP_CONFIG = { apiUrl: \\\"$VITE_API_URL\\\" };</script>|g\" /usr/share/nginx/html/index.html; fi && nginx -g 'daemon off;'"]
