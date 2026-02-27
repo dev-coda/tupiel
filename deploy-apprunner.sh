@@ -169,24 +169,44 @@ BACKEND_SERVICE_ARN=$(aws apprunner create-service \
   --region $REGION \
   --query 'Service.ServiceArn' \
   --output text 2>&1)
+CREATE_EXIT_CODE=$?
 
-if [ $? -eq 0 ]; then
+# Check if service was created successfully
+if [ $CREATE_EXIT_CODE -eq 0 ] && [ ! -z "$BACKEND_SERVICE_ARN" ] && [[ ! "$BACKEND_SERVICE_ARN" =~ "error" ]] && [[ ! "$BACKEND_SERVICE_ARN" =~ "Invalid" ]]; then
     echo -e "${GREEN}✅ Backend service created: ${BACKEND_SERVICE_ARN}${NC}"
     echo -e "${YELLOW}⏳ Waiting for backend to deploy (this takes ~5 minutes)...${NC}"
     
-    # Wait for service to be running
-    aws apprunner wait service-running \
-      --service-arn "$BACKEND_SERVICE_ARN" \
-      --region $REGION
+    # Poll for service to be running (App Runner doesn't have wait command)
+    MAX_WAIT=600  # 10 minutes
+    ELAPSED=0
+    while [ $ELAPSED -lt $MAX_WAIT ]; do
+        STATUS=$(aws apprunner describe-service \
+          --service-arn "$BACKEND_SERVICE_ARN" \
+          --region $REGION \
+          --query 'Service.Status' \
+          --output text 2>/dev/null)
+        
+        if [ "$STATUS" = "RUNNING" ]; then
+            break
+        fi
+        echo -n "."
+        sleep 10
+        ELAPSED=$((ELAPSED + 10))
+    done
+    echo ""
     
     # Get service URL
     BACKEND_URL=$(aws apprunner describe-service \
       --service-arn "$BACKEND_SERVICE_ARN" \
       --region $REGION \
       --query 'Service.ServiceUrl' \
-      --output text)
+      --output text 2>/dev/null)
     
-    echo -e "${GREEN}✅ Backend deployed! URL: ${BACKEND_URL}${NC}"
+    if [ ! -z "$BACKEND_URL" ]; then
+        echo -e "${GREEN}✅ Backend deployed! URL: ${BACKEND_URL}${NC}"
+    else
+        echo -e "${YELLOW}⚠️  Backend is deploying. Get URL from AWS Console.${NC}"
+    fi
 else
     echo -e "${YELLOW}⚠️  Backend service may already exist. Checking...${NC}"
     BACKEND_SERVICE_ARN=$(aws apprunner list-services --region $REGION --query "ServiceSummaryList[?ServiceName=='tupiel-backend'].ServiceArn" --output text)
@@ -249,22 +269,43 @@ FRONTEND_SERVICE_ARN=$(aws apprunner create-service \
   --region $REGION \
   --query 'Service.ServiceArn' \
   --output text 2>&1)
+CREATE_EXIT_CODE=$?
 
-if [ $? -eq 0 ]; then
+# Check if service was created successfully
+if [ $CREATE_EXIT_CODE -eq 0 ] && [ ! -z "$FRONTEND_SERVICE_ARN" ] && [[ ! "$FRONTEND_SERVICE_ARN" =~ "error" ]] && [[ ! "$FRONTEND_SERVICE_ARN" =~ "Invalid" ]]; then
     echo -e "${GREEN}✅ Frontend service created${NC}"
     echo -e "${YELLOW}⏳ Waiting for frontend to deploy...${NC}"
     
-    aws apprunner wait service-running \
-      --service-arn "$FRONTEND_SERVICE_ARN" \
-      --region $REGION
+    # Poll for service to be running
+    MAX_WAIT=600
+    ELAPSED=0
+    while [ $ELAPSED -lt $MAX_WAIT ]; do
+        STATUS=$(aws apprunner describe-service \
+          --service-arn "$FRONTEND_SERVICE_ARN" \
+          --region $REGION \
+          --query 'Service.Status' \
+          --output text 2>/dev/null)
+        
+        if [ "$STATUS" = "RUNNING" ]; then
+            break
+        fi
+        echo -n "."
+        sleep 10
+        ELAPSED=$((ELAPSED + 10))
+    done
+    echo ""
     
     FRONTEND_URL=$(aws apprunner describe-service \
       --service-arn "$FRONTEND_SERVICE_ARN" \
       --region $REGION \
       --query 'Service.ServiceUrl' \
-      --output text)
+      --output text 2>/dev/null)
     
-    echo -e "${GREEN}✅ Frontend deployed! URL: ${FRONTEND_URL}${NC}"
+    if [ ! -z "$FRONTEND_URL" ]; then
+        echo -e "${GREEN}✅ Frontend deployed! URL: ${FRONTEND_URL}${NC}"
+    else
+        echo -e "${YELLOW}⚠️  Frontend is deploying. Get URL from AWS Console.${NC}"
+    fi
 else
     echo -e "${YELLOW}⚠️  Frontend service may already exist. Checking...${NC}"
     FRONTEND_SERVICE_ARN=$(aws apprunner list-services --region $REGION --query "ServiceSummaryList[?ServiceName=='tupiel-frontend'].ServiceArn" --output text)
