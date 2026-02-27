@@ -53,20 +53,20 @@ echo -e "${GREEN}🔐 Logging into ECR...${NC}"
 aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin $ECR_BASE
 echo ""
 
-# Build and push backend
-echo -e "${GREEN}🏗️  Building backend image...${NC}"
+# Build and push backend (x86_64 for AWS App Runner)
+echo -e "${GREEN}🏗️  Building backend image (x86_64)...${NC}"
 cd backend
-docker build -t $BACKEND_REPO:latest .
+docker build --platform linux/amd64 -t $BACKEND_REPO:latest .
 docker tag $BACKEND_REPO:latest $ECR_BASE/$BACKEND_REPO:latest
 echo -e "${GREEN}📤 Pushing backend image...${NC}"
 docker push $ECR_BASE/$BACKEND_REPO:latest
 cd ..
 echo ""
 
-# Build and push frontend
-echo -e "${GREEN}🏗️  Building frontend image...${NC}"
+# Build and push frontend (x86_64 for AWS App Runner)
+echo -e "${GREEN}🏗️  Building frontend image (x86_64)...${NC}"
 cd frontend
-docker build -t $FRONTEND_REPO:latest .
+docker build --platform linux/amd64 -t $FRONTEND_REPO:latest .
 docker tag $FRONTEND_REPO:latest $ECR_BASE/$FRONTEND_REPO:latest
 echo -e "${GREEN}📤 Pushing frontend image...${NC}"
 docker push $ECR_BASE/$FRONTEND_REPO:latest
