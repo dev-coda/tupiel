@@ -16,7 +16,7 @@
           [loading]="dbLoading()"
           size="small"
           (onClick)="toggleDb()"
-          pTooltip="Click to toggle between local and remote database. Restart server after change."
+          [style]="{ 'white-space': 'nowrap' }"
         />
       </div>
     </ng-template>

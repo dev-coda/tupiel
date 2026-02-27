@@ -663,8 +663,16 @@
     gap: 0.75rem;
   }
 
+  .date-group {
+    width: 100%;
+  }
+
   .kpi-grid {
     grid-template-columns: repeat(3, 1fr);
+  }
+
+  .gauge-row {
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .bu-chart-wrap {
@@ -681,12 +689,77 @@
     height: 350px;
     min-height: 350px;
   }
+
+  .kpi-card {
+    padding: 1rem 0.875rem;
+  }
+
+  .kpi-value {
+    font-size: 1.2rem;
+  }
+
+  .kpi-label {
+    font-size: 0.65rem;
+  }
 }
 
 @media (max-width: 768px) {
+  .ppto-dashboard {
+    padding-bottom: 2rem;
+  }
+
+  .dashboard-toolbar {
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .toolbar-title {
+    font-size: 1.25rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .toolbar-controls {
+    width: 100%;
+
+    p-button {
+      width: 100%;
+
+      ::ng-deep .p-button-label {
+        @media (max-width: 480px) {
+          display: none;
+        }
+      }
+    }
+  }
+
+  .date-group {
+    width: 100%;
+  }
+
   .kpi-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 0.875rem;
+  }
+
+  .kpi-card {
+    padding: 1rem 0.75rem;
+    flex-direction: column;
+    text-align: center;
+    gap: 0.75rem;
+  }
+
+  .kpi-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
+  }
+
+  .kpi-value {
+    font-size: 1.1rem;
+  }
+
+  .kpi-label {
+    font-size: 0.6rem;
   }
 
   .gauge-row {
@@ -694,27 +767,159 @@
     gap: 1rem;
   }
 
+  .gauge-card {
+    .p-card-body {
+      padding: 1rem;
+    }
+  }
+
+  .gauge-content {
+    padding: 1rem 0.75rem;
+  }
+
+  .gauge-label {
+    font-size: 0.8rem;
+  }
+
+  .gauge-sub {
+    font-size: 0.7rem;
+  }
+
   .product-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 1rem;
+    padding: 1rem;
   }
 
-  .ppto-dashboard {
-    padding-bottom: 2rem;
+  .product-card {
+    padding: 1rem;
   }
 
   .bu-chart-wrap {
     height: 250px;
     min-height: 250px;
+    padding: 0 1rem 1rem;
   }
 
   .daily-chart-wrap {
     height: 350px;
     min-height: 350px;
+    padding: 0 1rem 1rem;
   }
 
   .weekly-chart-wrap {
     height: 300px;
     min-height: 300px;
+    padding: 0 1rem 1rem;
+  }
+
+  .card-header {
+    padding: 1rem 1.25rem 0.75rem;
+    font-size: 1rem;
+  }
+
+  .bu-list {
+    padding: 0 1.25rem;
+    gap: 1rem;
+  }
+
+  .bu-name {
+    font-size: 0.875rem;
+  }
+
+  .bu-detail {
+    font-size: 0.75rem;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  ::ng-deep {
+    p-panel {
+      .p-panel-header {
+        padding: 1rem 1.25rem;
+        font-size: 1rem;
+      }
+
+      .p-panel-content {
+        padding: 1rem;
+      }
+    }
+
+    p-table {
+      .p-datatable {
+        font-size: 0.8rem;
+      }
+
+      .p-datatable-tbody > tr > td {
+        padding: 0.75rem 0.5rem;
+      }
+
+      .p-datatable-thead > tr > th {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.75rem;
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .kpi-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .gauge-row {
+    grid-template-columns: 1fr;
+    gap: 0.875rem;
+  }
+
+  .product-grid {
+    grid-template-columns: 1fr;
+    gap: 0.875rem;
+  }
+
+  .toolbar-title {
+    font-size: 1.1rem;
+  }
+
+  .kpi-value {
+    font-size: 1rem;
+  }
+
+  .bu-chart-wrap,
+  .daily-chart-wrap,
+  .weekly-chart-wrap {
+    height: 250px;
+    min-height: 250px;
+    padding: 0 0.75rem 0.75rem;
+  }
+
+  ::ng-deep {
+    p-table {
+      .p-datatable {
+        font-size: 0.75rem;
+      }
+
+      .p-datatable-tbody > tr > td,
+      .p-datatable-thead > tr > th {
+        padding: 0.5rem 0.375rem;
+      }
+    }
+
+    p-knob {
+      canvas {
+        max-width: 100px !important;
+        max-height: 100px !important;
+      }
+    }
+  }
+
+  .gauge-content {
+    p-knob {
+      ::ng-deep canvas {
+        max-width: 100px !important;
+        max-height: 100px !important;
+      }
+    }
   }
 }
