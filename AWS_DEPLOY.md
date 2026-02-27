@@ -60,24 +60,72 @@ aws rds create-db-instance \
    - Port: 3306
    - Source: Your App Runner security group or `0.0.0.0/0` (for testing, restrict later)
 
-## Step 2: Import Database
+## Step 2: Configure RDS Security Group (IMPORTANT!)
 
-### Option A: From Local Dump
+**Before importing, you MUST allow your IP address:**
+
+1. Go to **EC2 Console** → **Security Groups**
+2. Find the security group attached to your RDS instance
+3. Click **Edit Inbound Rules**
+4. **Add Rule**:
+   - Type: `MySQL/Aurora`
+   - Port: `3306`
+   - Source: 
+     - Your IP: `YOUR_IP/32` (find your IP at https://whatismyipaddress.com)
+     - OR for testing: `0.0.0.0/0` (allows all IPs - **not recommended for production**)
+5. Click **Save rules**
+
+**Without this, you cannot connect to RDS!**
+
+## Step 3: Import Database
+
+### Option A: Use the Import Script (Recommended)
 
 ```bash
-# If you have a local dump
-mysql -h <RDS_ENDPOINT> -u admin -p tupiel < dump.sql
+./import-rds.sh [path-to-dump.sql]
 ```
 
-### Option B: From Production
+The script will:
+- Test the connection first
+- Create the database if needed
+- Import the dump file
+- Verify the import
+
+### Option B: Manual Import
+
+```bash
+# Test connection first
+mysql -h <RDS_ENDPOINT> -P 3306 -u admin -p -e "SELECT 1;"
+
+# Create database
+mysql -h <RDS_ENDPOINT> -P 3306 -u admin -p -e "CREATE DATABASE IF NOT EXISTS tupiel;"
+
+# Import dump
+mysql -h <RDS_ENDPOINT> -P 3306 -u admin -p tupiel < backup/tupiel_backup_20260226_091116.sql
+```
+
+### Option C: From Production
 
 ```bash
 # Export from production
 mysqldump -h <PROD_HOST> -u <USER> -p tupiel > dump.sql
 
-# Import to RDS
-mysql -h <RDS_ENDPOINT> -u admin -p tupiel < dump.sql
+# Import to RDS (after fixing security group)
+mysql -h <RDS_ENDPOINT> -P 3306 -u admin -p tupiel < dump.sql
 ```
+
+### Troubleshooting Connection Issues
+
+**Error: Can't connect to MySQL server**
+
+1. ✅ **Check Security Group**: Must allow your IP on port 3306
+2. ✅ **Check RDS is Public**: RDS instance must be publicly accessible
+3. ✅ **Check RDS Status**: Instance must be in "Available" state
+4. ✅ **Check Endpoint**: Use the correct RDS endpoint (not the instance name)
+5. ✅ **Test Connection**: 
+   ```bash
+   mysql -h <RDS_ENDPOINT> -P 3306 -u admin -p -e "SELECT 1;"
+   ```
 
 ## Step 3: Build and Push Docker Images to ECR
 
