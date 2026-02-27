@@ -93,6 +93,25 @@ cd ..
 echo -e "${GREEN}✅ Frontend image pushed${NC}"
 echo ""
 
+# Get or create IAM role for App Runner
+echo -e "${GREEN}🔐 Setting up IAM role for App Runner...${NC}"
+ROLE_NAME="AppRunnerECRAccessRole"
+ROLE_ARN=$(aws iam get-role --role-name $ROLE_NAME --query 'Role.Arn' --output text 2>/dev/null || echo "")
+
+if [ -z "$ROLE_ARN" ]; then
+    echo -e "${YELLOW}Creating IAM role...${NC}"
+    ./setup-apprunner-role.sh > /dev/null 2>&1
+    ROLE_ARN=$(aws iam get-role --role-name $ROLE_NAME --query 'Role.Arn' --output text)
+fi
+
+if [ -z "$ROLE_ARN" ]; then
+    echo -e "${RED}❌ Failed to get IAM role ARN${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}✅ Using IAM role: ${ROLE_ARN}${NC}"
+echo ""
+
 # Create App Runner service configuration
 echo -e "${GREEN}📝 Creating App Runner service configurations...${NC}"
 
@@ -118,7 +137,10 @@ cat > /tmp/backend-service.json <<EOF
         }
       }
     },
-    "AutoDeploymentsEnabled": true
+    "AutoDeploymentsEnabled": true,
+    "AuthenticationConfiguration": {
+      "AccessRoleArn": "${ROLE_ARN}"
+    }
   },
   "InstanceConfiguration": {
     "Cpu": "0.5 vCPU",
@@ -200,7 +222,10 @@ cat > /tmp/frontend-service.json <<EOF
         }
       }
     },
-    "AutoDeploymentsEnabled": true
+    "AutoDeploymentsEnabled": true,
+    "AuthenticationConfiguration": {
+      "AccessRoleArn": "${ROLE_ARN}"
+    }
   },
   "InstanceConfiguration": {
     "Cpu": "0.25 vCPU",
