@@ -116,8 +116,7 @@ cat > /tmp/backend-service.json <<EOF
           "DB_PASSWORD": "${DB_PASSWORD}",
           "USE_LOCAL_DB": "false"
         }
-      },
-      "ImageRepositoryType": "ECR"
+      }
     },
     "AutoDeploymentsEnabled": true
   },
@@ -199,8 +198,7 @@ cat > /tmp/frontend-service.json <<EOF
         "RuntimeEnvironmentVariables": {
           "VITE_API_URL": "${BACKEND_URL}"
         }
-      },
-      "ImageRepositoryType": "ECR"
+      }
     },
     "AutoDeploymentsEnabled": true
   },
