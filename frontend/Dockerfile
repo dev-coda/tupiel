@@ -27,8 +27,8 @@ RUN if [ -f pnpm-lock.yaml ]; then \
 # Production stage - force x86_64 platform
 FROM --platform=linux/amd64 nginx:alpine
 
-# Copy built files
-COPY --from=builder /app/dist/frontend /usr/share/nginx/html
+# Copy built files (Angular 17+ outputs to browser/ subdirectory)
+COPY --from=builder /app/dist/frontend/browser /usr/share/nginx/html
 
 # Copy nginx config
 COPY nginx.conf /etc/nginx/conf.d/default.conf
