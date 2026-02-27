@@ -1,4 +1,5 @@
-FROM node:20-alpine
+# Force x86_64 platform for AWS App Runner
+FROM --platform=linux/amd64 node:20-alpine
 
 WORKDIR /app
 

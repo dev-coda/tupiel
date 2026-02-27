@@ -86,7 +86,7 @@ else
   },
   "HealthCheckConfiguration": {
     "Protocol": "HTTP",
-    "Path": "/",
+    "Path": "/health",
     "Interval": 10,
     "Timeout": 5,
     "HealthyThreshold": 1,
