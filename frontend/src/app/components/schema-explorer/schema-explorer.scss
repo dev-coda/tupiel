@@ -1,0 +1,27 @@
+.table-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  i {
+    color: var(--p-primary-color);
+  }
+
+  .col-count {
+    color: var(--p-text-muted-color);
+    font-size: 0.85rem;
+    margin-left: auto;
+  }
+}
+
+.table-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+code {
+  font-size: 0.85rem;
+  background: var(--p-surface-100);
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+}

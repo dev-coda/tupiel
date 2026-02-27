@@ -1,0 +1,58 @@
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.stat-card {
+  text-align: center;
+  padding: 0.5rem;
+
+  .stat-label {
+    font-size: 0.9rem;
+    color: var(--p-text-muted-color);
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--p-primary-color);
+  }
+}
+
+.table-list {
+  background: var(--p-surface-card);
+  border-radius: var(--p-border-radius);
+  border: 1px solid var(--p-surface-border);
+  overflow: hidden;
+}
+
+.table-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--p-surface-border);
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background: var(--p-surface-hover);
+  }
+
+  .table-name {
+    font-weight: 600;
+    font-family: monospace;
+  }
+
+  .table-count {
+    color: var(--p-text-muted-color);
+    font-size: 0.9rem;
+  }
+}

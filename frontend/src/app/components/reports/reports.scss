@@ -1,0 +1,67 @@
+.report-controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  flex-wrap: wrap;
+
+  .control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+
+    label {
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: var(--p-text-secondary-color);
+    }
+  }
+
+  .control-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-end;
+  }
+}
+
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+
+  .summary-label {
+    font-size: 0.85rem;
+    color: var(--p-text-secondary-color);
+    font-weight: 500;
+  }
+
+  .summary-value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--p-primary-color);
+  }
+}
+
+.export-bar {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.mt-2 {
+  margin-top: 1rem;
+}
+
+.mt-3 {
+  margin-top: 1.5rem;
+}
+
+.text-center {
+  text-align: center;
+}

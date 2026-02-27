@@ -1,0 +1,518 @@
+<div class="ppto-dashboard" id="dashboard-print-area">
+
+  <!-- ═══════════════════════════════════════════════════════
+       TOOLBAR: Date range, Load, Print, Download
+       ═══════════════════════════════════════════════════════ -->
+  <p-toolbar styleClass="dashboard-toolbar no-print">
+    <ng-template #start>
+      <span class="toolbar-title">
+        <i class="pi pi-chart-bar"></i>
+        Controlador PPTO
+      </span>
+    </ng-template>
+    <ng-template #end>
+      <div class="toolbar-controls">
+        <div class="date-group">
+          <label>Desde</label>
+          <p-datepicker
+            [(ngModel)]="dateFrom"
+            dateFormat="yy-mm-dd"
+            [showIcon]="true"
+            [style]="{ width: '160px' }"
+          />
+        </div>
+        <div class="date-group">
+          <label>Hasta</label>
+          <p-datepicker
+            [(ngModel)]="dateTo"
+            dateFormat="yy-mm-dd"
+            [showIcon]="true"
+            [style]="{ width: '160px' }"
+          />
+        </div>
+        <p-button
+          icon="pi pi-refresh"
+          label="Actualizar"
+          (onClick)="loadDashboard()"
+          [loading]="loading()"
+          severity="primary"
+          size="small"
+        />
+        <p-button
+          icon="pi pi-print"
+          label="Imprimir"
+          (onClick)="printDashboard()"
+          severity="secondary"
+          size="small"
+          [outlined]="true"
+        />
+        <p-button
+          icon="pi pi-file-excel"
+          label="Descargar Excel"
+          (onClick)="downloadExcel()"
+          severity="success"
+          size="small"
+          [outlined]="true"
+        />
+      </div>
+    </ng-template>
+  </p-toolbar>
+
+  @if (error()) {
+    <p-message severity="error" [text]="error()!" styleClass="mt-2 mb-2" />
+  }
+
+  @if (loading()) {
+    <div class="loading-container">
+      <p-progressSpinner />
+      <p>Cargando datos del dashboard...</p>
+    </div>
+  } @else if (dashData()) {
+
+    <!-- ═══════════════════════════════════════════════════════
+         SECTION 1: KPI CARDS
+         ═══════════════════════════════════════════════════════ -->
+    <div class="kpi-grid">
+      <div class="kpi-card kpi-meta">
+        <div class="kpi-icon"><i class="pi pi-flag"></i></div>
+        <div class="kpi-body">
+          <span class="kpi-label">Meta Global</span>
+          <span class="kpi-value">{{ fmtCurrencyM(strategy()!.metaGlobal) }}</span>
+        </div>
+      </div>
+      <div class="kpi-card kpi-facturado">
+        <div class="kpi-icon"><i class="pi pi-dollar"></i></div>
+        <div class="kpi-body">
+          <span class="kpi-label">Facturado</span>
+          <span class="kpi-value">{{ fmtCurrencyM(strategy()!.facturado) }}</span>
+        </div>
+      </div>
+      <div class="kpi-card kpi-proyeccion">
+        <div class="kpi-icon"><i class="pi pi-chart-line"></i></div>
+        <div class="kpi-body">
+          <span class="kpi-label">Proyección Estimada</span>
+          <span class="kpi-value">{{ fmtCurrencyM(strategy()!.proyeccion) }}</span>
+        </div>
+      </div>
+      <div class="kpi-card kpi-resultado">
+        <div class="kpi-icon"><i class="pi pi-check-circle"></i></div>
+        <div class="kpi-body">
+          <span class="kpi-label">Resultado Esperado</span>
+          <span class="kpi-value">{{ fmtCurrencyM(strategy()!.resultadoEsperado) }}</span>
+          <span class="kpi-sub">
+            <p-tag
+              [value]="fmtPct(strategy()!.pctResultado)"
+              [severity]="tagSeverity(strategy()!.pctResultado)"
+            />
+          </span>
+        </div>
+      </div>
+      <div class="kpi-card kpi-falta">
+        <div class="kpi-icon"><i class="pi pi-exclamation-triangle"></i></div>
+        <div class="kpi-body">
+          <span class="kpi-label">Falta por Cumplir</span>
+          <span class="kpi-value" [class.negative]="strategy()!.faltaCumplir > 0">
+            {{ fmtCurrencyM(strategy()!.faltaCumplir) }}
+          </span>
+        </div>
+      </div>
+      <div class="kpi-card kpi-dias">
+        <div class="kpi-icon"><i class="pi pi-calendar"></i></div>
+        <div class="kpi-body">
+          <span class="kpi-label">Días Ejecutados / Hábiles</span>
+          <span class="kpi-value">{{ strategy()!.diasEjecutados }} / {{ strategy()!.diasHabiles }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Cumplimiento Gauges ── -->
+    <div class="gauge-row">
+      <p-card styleClass="gauge-card">
+        <div class="gauge-content">
+          <p-knob
+            [(ngModel)]="knobCumplimiento"
+            [readonly]="true"
+            [size]="130"
+            [strokeWidth]="8"
+            valueTemplate="{value}%"
+            [valueColor]="progressColor(strategy()!.pctRealCum)"
+            rangeColor="#e5e7eb"
+          />
+          <span class="gauge-label">Cumplimiento Real</span>
+          <span class="gauge-sub">{{ fmtCurrencyM(strategy()!.facturado) }} de {{ fmtCurrencyM(strategy()!.metaGlobal) }}</span>
+        </div>
+      </p-card>
+      <p-card styleClass="gauge-card">
+        <div class="gauge-content">
+          <p-knob
+            [(ngModel)]="knobAlDia"
+            [readonly]="true"
+            [size]="130"
+            [strokeWidth]="8"
+            valueTemplate="{value}%"
+            [valueColor]="progressColor(strategy()!.pctAlDia)"
+            rangeColor="#e5e7eb"
+          />
+          <span class="gauge-label">% del Mes Transcurrido</span>
+          <span class="gauge-sub">{{ strategy()!.diasEjecutados }} de {{ strategy()!.diasHabiles }} días</span>
+        </div>
+      </p-card>
+      <p-card styleClass="gauge-card">
+        <div class="gauge-content">
+          <p-knob
+            [(ngModel)]="knobDiferencia"
+            [readonly]="true"
+            [size]="130"
+            [strokeWidth]="8"
+            valueTemplate="{value}%"
+            [valueColor]="strategy()!.pctDiferencia >= 0 ? '#22c55e' : '#ef4444'"
+            rangeColor="#e5e7eb"
+          />
+          <span class="gauge-label">Diferencia vs. Esperado</span>
+          <span class="gauge-sub" [class.positive]="strategy()!.pctDiferencia >= 0" [class.negative]="strategy()!.pctDiferencia < 0">
+            {{ strategy()!.pctDiferencia >= 0 ? '+' : '' }}{{ fmtPct(strategy()!.pctDiferencia) }}
+          </span>
+        </div>
+      </p-card>
+      <p-card styleClass="gauge-card">
+        <div class="gauge-content">
+          <p-knob
+            [(ngModel)]="knobResultado"
+            [readonly]="true"
+            [size]="130"
+            [strokeWidth]="8"
+            valueTemplate="{value}%"
+            [valueColor]="progressColor(strategy()!.pctResultado)"
+            rangeColor="#e5e7eb"
+          />
+          <span class="gauge-label">Resultado Esperado</span>
+          <span class="gauge-sub">{{ fmtCurrencyM(strategy()!.resultadoEsperado) }} de {{ fmtCurrencyM(strategy()!.metaGlobal) }}</span>
+        </div>
+      </p-card>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         SECTION 2: BUSINESS UNITS + DAILY CHART
+         ═══════════════════════════════════════════════════════ -->
+    <div class="charts-row">
+      <!-- Business Units -->
+      <p-card styleClass="chart-card">
+        <ng-template #header>
+          <div class="card-header">
+            <i class="pi pi-building"></i> Unidades de Negocio
+          </div>
+        </ng-template>
+        <div class="bu-list">
+          @for (unit of businessUnits(); track unit.nombre) {
+            <div class="bu-item">
+              <div class="bu-header">
+                <span class="bu-name">{{ unit.nombre }}</span>
+                <p-tag
+                  [value]="fmtPct(unit.pctCumplimiento)"
+                  [severity]="tagSeverity(unit.pctCumplimiento)"
+                  [rounded]="true"
+                />
+              </div>
+              <p-progressBar
+                [value]="Math.min(unit.pctCumplimiento * 100, 100)"
+                [showValue]="false"
+                [style]="{ height: '10px' }"
+                [color]="progressColor(unit.pctCumplimiento)"
+              />
+              <div class="bu-detail">
+                <span>{{ fmtCurrencyM(unit.venta) }} de {{ fmtCurrencyM(unit.meta) }}</span>
+                <span [class.positive]="unit.faltaria <= 0" [class.negative]="unit.faltaria > 0">
+                  {{ unit.faltaria <= 0 ? '✅' : '⚠️' }} Falta: {{ fmtCurrencyM(Math.abs(unit.faltaria)) }}
+                </span>
+              </div>
+            </div>
+          }
+        </div>
+        <div class="bu-chart-wrap">
+          <p-chart type="bar" [data]="businessUnitChartData()" [options]="businessUnitChartOptions" />
+        </div>
+      </p-card>
+
+      <!-- Daily chart -->
+      <p-card styleClass="chart-card chart-card-wide">
+        <ng-template #header>
+          <div class="card-header">
+            <i class="pi pi-calendar"></i> Ventas Diarias
+          </div>
+        </ng-template>
+        <div class="daily-chart-wrap">
+          <p-chart type="bar" [data]="dailyChartData()" [options]="dailyChartOptions" />
+        </div>
+      </p-card>
+    </div>
+
+    <!-- Weekly summary -->
+    <p-card styleClass="mt-section">
+      <ng-template #header>
+        <div class="card-header">
+          <i class="pi pi-chart-bar"></i> Resumen Semanal
+        </div>
+      </ng-template>
+      <div class="weekly-chart-wrap">
+        <p-chart type="bar" [data]="weeklyChartData()" [options]="weeklyChartOptions" />
+      </div>
+    </p-card>
+
+    <!-- ═══════════════════════════════════════════════════════
+         SECTION 3: PERSONNEL TABLES
+         ═══════════════════════════════════════════════════════ -->
+
+    <!-- Dermatología -->
+    <p-panel [header]="'👨‍⚕️ Dermatología — Presupuesto Centro Especializado'" [toggleable]="true" styleClass="mt-section">
+      <p-table
+        [value]="dermaPersonnel()"
+        [scrollable]="true"
+        styleClass="p-datatable-sm p-datatable-striped p-datatable-gridlines"
+      >
+        <ng-template #header>
+          <tr>
+            <th style="width:200px">Especialista</th>
+            <th style="width:80px" class="text-right">Atenciones</th>
+            <th style="width:130px" class="text-right">Venta</th>
+            <th style="width:130px" class="text-right">Presupuesto</th>
+            <th style="width:100px" class="text-right">% Venta</th>
+            <th style="width:130px" class="text-right">Proyección</th>
+            <th style="width:100px" class="text-right">% Esperado</th>
+            <th style="width:180px">Cumplimiento</th>
+          </tr>
+        </ng-template>
+        <ng-template #body let-p>
+          <tr>
+            <td><strong>{{ p.nombre }}</strong></td>
+            <td class="text-right">{{ p.atenciones }}</td>
+            <td class="text-right">{{ fmtCurrency(p.venta) }}</td>
+            <td class="text-right">{{ fmtCurrency(p.presupuesto) }}</td>
+            <td class="text-right">
+              <p-tag [value]="fmtPct(p.pctVenta)" [severity]="tagSeverity(p.pctVenta)" />
+            </td>
+            <td class="text-right">{{ fmtCurrency(p.proyeccion) }}</td>
+            <td class="text-right">
+              <p-tag [value]="fmtPct(p.pctEsperado)" [severity]="tagSeverity(p.pctEsperado)" />
+            </td>
+            <td>
+              <p-progressBar
+                [value]="Math.min(p.pctEsperado * 100, 100)"
+                [showValue]="false"
+                [style]="{ height: '8px' }"
+                [color]="progressColor(p.pctEsperado)"
+              />
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template #footer>
+          @if (dermaPersonnel().length > 0) {
+            @let totals = personnelGroupTotal(dermaPersonnel());
+            <tr class="totals-row">
+              <td><strong>TOTAL</strong></td>
+              <td class="text-right"><strong>{{ totals.atenciones }}</strong></td>
+              <td class="text-right"><strong>{{ fmtCurrency(totals.venta) }}</strong></td>
+              <td class="text-right"><strong>{{ fmtCurrency(totals.presupuesto) }}</strong></td>
+              <td class="text-right">
+                <p-tag [value]="fmtPct(totals.pctVenta)" [severity]="tagSeverity(totals.pctVenta)" />
+              </td>
+              <td class="text-right"><strong>{{ fmtCurrency(totals.proyeccion) }}</strong></td>
+              <td class="text-right">
+                <p-tag [value]="fmtPct(totals.pctEsperado)" [severity]="tagSeverity(totals.pctEsperado)" />
+              </td>
+              <td>
+                <p-progressBar
+                  [value]="Math.min(totals.pctEsperado * 100, 100)"
+                  [showValue]="false"
+                  [style]="{ height: '8px' }"
+                  [color]="progressColor(totals.pctEsperado)"
+                />
+              </td>
+            </tr>
+          }
+        </ng-template>
+      </p-table>
+    </p-panel>
+
+    <!-- Med Estética -->
+    <p-panel [header]="'💉 Medicina Estética'" [toggleable]="true" styleClass="mt-section">
+      <p-table
+        [value]="medEstPersonnel()"
+        [scrollable]="true"
+        styleClass="p-datatable-sm p-datatable-striped p-datatable-gridlines"
+      >
+        <ng-template #header>
+          <tr>
+            <th style="width:200px">Especialista</th>
+            <th style="width:80px" class="text-right">Atenciones</th>
+            <th style="width:130px" class="text-right">Venta</th>
+            <th style="width:130px" class="text-right">Presupuesto</th>
+            <th style="width:100px" class="text-right">% Venta</th>
+            <th style="width:130px" class="text-right">Proyección</th>
+            <th style="width:100px" class="text-right">% Esperado</th>
+            <th style="width:180px">Cumplimiento</th>
+          </tr>
+        </ng-template>
+        <ng-template #body let-p>
+          <tr>
+            <td><strong>{{ p.nombre }}</strong></td>
+            <td class="text-right">{{ p.atenciones }}</td>
+            <td class="text-right">{{ fmtCurrency(p.venta) }}</td>
+            <td class="text-right">{{ fmtCurrency(p.presupuesto) }}</td>
+            <td class="text-right">
+              <p-tag [value]="fmtPct(p.pctVenta)" [severity]="tagSeverity(p.pctVenta)" />
+            </td>
+            <td class="text-right">{{ fmtCurrency(p.proyeccion) }}</td>
+            <td class="text-right">
+              <p-tag [value]="fmtPct(p.pctEsperado)" [severity]="tagSeverity(p.pctEsperado)" />
+            </td>
+            <td>
+              <p-progressBar
+                [value]="Math.min(p.pctEsperado * 100, 100)"
+                [showValue]="false"
+                [style]="{ height: '8px' }"
+                [color]="progressColor(p.pctEsperado)"
+              />
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template #footer>
+          @if (medEstPersonnel().length > 0) {
+            @let totals = personnelGroupTotal(medEstPersonnel());
+            <tr class="totals-row">
+              <td><strong>TOTAL</strong></td>
+              <td class="text-right"><strong>{{ totals.atenciones }}</strong></td>
+              <td class="text-right"><strong>{{ fmtCurrency(totals.venta) }}</strong></td>
+              <td class="text-right"><strong>{{ fmtCurrency(totals.presupuesto) }}</strong></td>
+              <td class="text-right">
+                <p-tag [value]="fmtPct(totals.pctVenta)" [severity]="tagSeverity(totals.pctVenta)" />
+              </td>
+              <td class="text-right"><strong>{{ fmtCurrency(totals.proyeccion) }}</strong></td>
+              <td class="text-right">
+                <p-tag [value]="fmtPct(totals.pctEsperado)" [severity]="tagSeverity(totals.pctEsperado)" />
+              </td>
+              <td>
+                <p-progressBar
+                  [value]="Math.min(totals.pctEsperado * 100, 100)"
+                  [showValue]="false"
+                  [style]="{ height: '8px' }"
+                  [color]="progressColor(totals.pctEsperado)"
+                />
+              </td>
+            </tr>
+          }
+        </ng-template>
+      </p-table>
+    </p-panel>
+
+    <!-- TP Lounge -->
+    <p-panel [header]="'🧖‍♀️ TP Lounge'" [toggleable]="true" styleClass="mt-section">
+      <p-table
+        [value]="loungePersonnel()"
+        [scrollable]="true"
+        styleClass="p-datatable-sm p-datatable-striped p-datatable-gridlines"
+      >
+        <ng-template #header>
+          <tr>
+            <th style="width:200px">Especialista</th>
+            <th style="width:80px" class="text-right">Atenciones</th>
+            <th style="width:130px" class="text-right">Venta</th>
+            <th style="width:130px" class="text-right">Presupuesto</th>
+            <th style="width:100px" class="text-right">% Venta</th>
+            <th style="width:130px" class="text-right">Proyección</th>
+            <th style="width:100px" class="text-right">% Esperado</th>
+            <th style="width:180px">Cumplimiento</th>
+          </tr>
+        </ng-template>
+        <ng-template #body let-p>
+          <tr>
+            <td><strong>{{ p.nombre }}</strong></td>
+            <td class="text-right">{{ p.atenciones }}</td>
+            <td class="text-right">{{ fmtCurrency(p.venta) }}</td>
+            <td class="text-right">{{ fmtCurrency(p.presupuesto) }}</td>
+            <td class="text-right">
+              <p-tag [value]="fmtPct(p.pctVenta)" [severity]="tagSeverity(p.pctVenta)" />
+            </td>
+            <td class="text-right">{{ fmtCurrency(p.proyeccion) }}</td>
+            <td class="text-right">
+              <p-tag [value]="fmtPct(p.pctEsperado)" [severity]="tagSeverity(p.pctEsperado)" />
+            </td>
+            <td>
+              <p-progressBar
+                [value]="Math.min(p.pctEsperado * 100, 100)"
+                [showValue]="false"
+                [style]="{ height: '8px' }"
+                [color]="progressColor(p.pctEsperado)"
+              />
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template #footer>
+          @if (loungePersonnel().length > 0) {
+            @let totals = personnelGroupTotal(loungePersonnel());
+            <tr class="totals-row">
+              <td><strong>TOTAL</strong></td>
+              <td class="text-right"><strong>{{ totals.atenciones }}</strong></td>
+              <td class="text-right"><strong>{{ fmtCurrency(totals.venta) }}</strong></td>
+              <td class="text-right"><strong>{{ fmtCurrency(totals.presupuesto) }}</strong></td>
+              <td class="text-right">
+                <p-tag [value]="fmtPct(totals.pctVenta)" [severity]="tagSeverity(totals.pctVenta)" />
+              </td>
+              <td class="text-right"><strong>{{ fmtCurrency(totals.proyeccion) }}</strong></td>
+              <td class="text-right">
+                <p-tag [value]="fmtPct(totals.pctEsperado)" [severity]="tagSeverity(totals.pctEsperado)" />
+              </td>
+              <td>
+                <p-progressBar
+                  [value]="Math.min(totals.pctEsperado * 100, 100)"
+                  [showValue]="false"
+                  [style]="{ height: '8px' }"
+                  [color]="progressColor(totals.pctEsperado)"
+                />
+              </td>
+            </tr>
+          }
+        </ng-template>
+      </p-table>
+    </p-panel>
+
+    <!-- ═══════════════════════════════════════════════════════
+         SECTION 4: PRODUCTS
+         ═══════════════════════════════════════════════════════ -->
+    <p-panel header="📦 Control de Productos" [toggleable]="true" styleClass="mt-section">
+      <div class="product-grid">
+        @for (prod of products(); track prod.nombre) {
+          <div class="product-card" [class.product-complete]="prod.pctCumplimiento >= 1">
+            <div class="product-name">{{ prod.nombre }}</div>
+            <div class="product-knob-wrap">
+              <p-knob
+                [ngModel]="Math.min(Math.round(prod.pctCumplimiento * 100), 100)"
+                [readonly]="true"
+                [size]="90"
+                [strokeWidth]="8"
+                valueTemplate="{value}%"
+                [valueColor]="progressColor(prod.pctCumplimiento)"
+                rangeColor="#e5e7eb"
+              />
+            </div>
+            <div class="product-detail">
+              <span>Vendidos: <strong>{{ prod.vendidos }}</strong></span>
+              <span>Meta: <strong>{{ prod.meta }}</strong></span>
+              <span>Faltan: <strong>{{ prod.faltan }}</strong></span>
+            </div>
+          </div>
+        }
+      </div>
+    </p-panel>
+
+    <!-- Footer -->
+    <div class="dashboard-footer">
+      <small>
+        Generado: {{ dashData()!.generated_at | date:'medium' }} •
+        Rango: {{ dashData()!.date_from }} – {{ dashData()!.date_to }} •
+        Registros Rent: {{ dashData()!.totalRegistrosRent }} •
+        Registros Est: {{ dashData()!.totalRegistrosEst }}
+      </small>
+    </div>
+
+  }
+</div>

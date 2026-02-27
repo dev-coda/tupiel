@@ -1,0 +1,49 @@
+<h2><i class="pi pi-chart-bar"></i> Dashboard</h2>
+
+@if (error()) {
+  <p-message severity="error" [text]="error()!" styleClass="mb-2" />
+}
+
+@if (loading()) {
+  <div class="text-center mt-3">
+    <p-progressSpinner />
+  </div>
+} @else {
+  <div class="summary-cards">
+    <p-card>
+      <div class="stat-card">
+        <div class="stat-label">Database Status</div>
+        <div class="stat-value">
+          <p-tag
+            [value]="health()?.database === 'connected' ? 'Connected' : 'Disconnected'"
+            [severity]="health()?.database === 'connected' ? 'success' : 'danger'"
+          />
+        </div>
+      </div>
+    </p-card>
+
+    <p-card>
+      <div class="stat-card">
+        <div class="stat-label">Total Tables</div>
+        <div class="stat-value">{{ totalTables() }}</div>
+      </div>
+    </p-card>
+
+    <p-card>
+      <div class="stat-card">
+        <div class="stat-label">Total Rows (est.)</div>
+        <div class="stat-value">{{ totalRows() | number }}</div>
+      </div>
+    </p-card>
+  </div>
+
+  <h3 class="mt-3">Tables by Row Count</h3>
+  <div class="table-list">
+    @for (rc of rowCounts(); track rc.table_name) {
+      <div class="table-row">
+        <span class="table-name">{{ rc.table_name }}</span>
+        <span class="table-count">{{ rc.estimated_row_count | number }} rows</span>
+      </div>
+    }
+  </div>
+}

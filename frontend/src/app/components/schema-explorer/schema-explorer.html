@@ -1,0 +1,131 @@
+<h2><i class="pi pi-database"></i> Schema Explorer</h2>
+
+@if (error()) {
+  <p-message severity="error" [text]="error()!" styleClass="mb-2" />
+}
+
+@if (loading()) {
+  <div class="text-center mt-3">
+    <p-progressSpinner />
+  </div>
+} @else {
+  <p class="mb-2">
+    Found <strong>{{ tables().length }}</strong> tables in the database.
+  </p>
+
+  <p-accordion [multiple]="true">
+    @for (table of tables(); track table.table) {
+      <p-accordion-panel>
+        <p-accordion-header>
+          <span class="table-header">
+            <i class="pi pi-table"></i>
+            <strong>{{ table.table }}</strong>
+            <p-tag
+              [value]="'' + getRowCount(table.table)"
+              severity="info"
+              [style]="{ marginLeft: '0.5rem' }"
+            />
+            <span class="col-count">{{ table.columns.length }} columns</span>
+          </span>
+        </p-accordion-header>
+        <p-accordion-content>
+          <div class="table-actions mb-2">
+            <p-button
+              label="View Sample Data"
+              icon="pi pi-eye"
+              severity="secondary"
+              size="small"
+              (onClick)="viewSample(table.table)"
+            />
+          </div>
+
+          <p-table [value]="table.columns" [rows]="50" styleClass="p-datatable-sm p-datatable-striped">
+            <ng-template #header>
+              <tr>
+                <th>Column</th>
+                <th>Type</th>
+                <th>Max Length</th>
+                <th>Nullable</th>
+                <th>Key</th>
+                <th>Default</th>
+                <th>Extra</th>
+              </tr>
+            </ng-template>
+            <ng-template #body let-col>
+              <tr>
+                <td><strong>{{ col.name }}</strong></td>
+                <td><code>{{ col.type }}</code></td>
+                <td>{{ col.maxLength ?? '-' }}</td>
+                <td>
+                  <p-tag
+                    [value]="col.nullable"
+                    [severity]="col.nullable === 'YES' ? 'warn' : 'success'"
+                  />
+                </td>
+                <td>
+                  @if (col.key) {
+                    <p-tag [value]="col.key" severity="info" />
+                  }
+                </td>
+                <td><code>{{ col.default ?? '-' }}</code></td>
+                <td>{{ col.extra || '-' }}</td>
+              </tr>
+            </ng-template>
+          </p-table>
+
+          @if (getTableForeignKeys(table.table).length > 0) {
+            <h4 class="mt-2">Foreign Keys</h4>
+            <ul>
+              @for (fk of getTableForeignKeys(table.table); track fk.constraint_name) {
+                <li>
+                  <code>{{ fk.column_name }}</code> &rarr;
+                  <code>{{ fk.foreign_table_name }}.{{ fk.foreign_column_name }}</code>
+                </li>
+              }
+            </ul>
+          }
+        </p-accordion-content>
+      </p-accordion-panel>
+    }
+  </p-accordion>
+}
+
+<!-- Sample Data Dialog -->
+<p-dialog
+  [header]="'Sample: ' + sampleTableName()"
+  [visible]="sampleDialogVisible()"
+  (visibleChange)="sampleDialogVisible.set($event)"
+  [modal]="true"
+  [style]="{ width: '90vw', maxWidth: '1200px' }"
+  [maximizable]="true"
+>
+  @if (sampleLoading()) {
+    <div class="text-center">
+      <p-progressSpinner />
+    </div>
+  } @else if (sampleData().length === 0) {
+    <p>No data found in this table.</p>
+  } @else {
+    <p-table
+      [value]="sampleData()"
+      [scrollable]="true"
+      scrollHeight="400px"
+      styleClass="p-datatable-sm"
+    >
+      <ng-template #header>
+        <tr>
+          @for (col of sampleColumns(); track col) {
+            <th>{{ col }}</th>
+          }
+        </tr>
+      </ng-template>
+      <ng-template #body let-row>
+        <tr>
+          @for (col of sampleColumns(); track col) {
+            <td>{{ row[col] }}</td>
+          }
+        </tr>
+      </ng-template>
+    </p-table>
+  }
+</p-dialog>

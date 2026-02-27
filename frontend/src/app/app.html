@@ -1,0 +1,29 @@
+<div class="app-container">
+  <p-menubar [model]="menuItems">
+    <ng-template #start>
+      <span class="app-logo">
+        <i class="pi pi-heart-fill" style="color: var(--p-primary-color); margin-right: 0.5rem;"></i>
+        <strong>TuPiel</strong>&nbsp;Reports
+      </span>
+    </ng-template>
+    <ng-template #end>
+      <div class="db-toggle-container">
+        <p-button
+          [label]="dbMode() === 'local' ? 'DB: Local' : 'DB: Remote'"
+          [icon]="dbMode() === 'local' ? 'pi pi-server' : 'pi pi-cloud'"
+          [severity]="dbMode() === 'local' ? 'success' : 'info'"
+          [outlined]="true"
+          [loading]="dbLoading()"
+          size="small"
+          (onClick)="toggleDb()"
+          pTooltip="Click to toggle between local and remote database. Restart server after change."
+        />
+      </div>
+    </ng-template>
+  </p-menubar>
+
+  <main class="app-content">
+    <router-outlet />
+  </main>
+  <p-toast />
+</div>
