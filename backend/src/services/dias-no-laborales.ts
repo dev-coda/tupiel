@@ -1,4 +1,6 @@
 import { appQuery } from '../config/app-database';
+import appPool from '../config/app-database';
+import { PoolConnection } from 'mysql2/promise';
 
 export interface DiaNoLaboral {
   id: number;
