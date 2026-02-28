@@ -40,6 +40,11 @@ export class App implements OnInit {
       icon: 'pi pi-sitemap',
       routerLink: '/schema',
     },
+    {
+      label: 'Días No Laborales',
+      icon: 'pi pi-calendar-times',
+      routerLink: '/dias-no-laborales',
+    },
   ];
 
   constructor(

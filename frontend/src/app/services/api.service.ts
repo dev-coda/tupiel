@@ -93,4 +93,42 @@ export class ApiService {
       { useLocal }
     );
   }
+
+  /** Get all non-working days */
+  getDiasNoLaborales(): Observable<DiasNoLaboralesResponse> {
+    return this.http.get<DiasNoLaboralesResponse>(`${this.baseUrl}/dias-no-laborales`);
+  }
+
+  /** Get a non-working day by ID */
+  getDiaNoLaboral(id: number): Observable<DiaNoLaboralResponse> {
+    return this.http.get<DiaNoLaboralResponse>(`${this.baseUrl}/dias-no-laborales/${id}`);
+  }
+
+  /** Create a new non-working day */
+  createDiaNoLaboral(fecha: string, descripcion?: string | null): Observable<DiaNoLaboralResponse> {
+    return this.http.post<DiaNoLaboralResponse>(`${this.baseUrl}/dias-no-laborales`, {
+      fecha,
+      descripcion,
+    });
+  }
+
+  /** Update a non-working day */
+  updateDiaNoLaboral(id: number, fecha: string, descripcion?: string | null): Observable<DiaNoLaboralResponse> {
+    return this.http.put<DiaNoLaboralResponse>(`${this.baseUrl}/dias-no-laborales/${id}`, {
+      fecha,
+      descripcion,
+    });
+  }
+
+  /** Delete a non-working day */
+  deleteDiaNoLaboral(id: number): Observable<{ success: boolean; message: string }> {
+    return this.http.delete<{ success: boolean; message: string }>(`${this.baseUrl}/dias-no-laborales/${id}`);
+  }
+
+  /** Add all Sundays of the current year */
+  addAllSundays(year?: number): Observable<AddSundaysResponse> {
+    return this.http.post<AddSundaysResponse>(`${this.baseUrl}/dias-no-laborales/add-sundays`, {
+      year,
+    });
+  }
 }
