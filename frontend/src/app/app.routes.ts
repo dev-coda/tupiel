@@ -31,7 +31,12 @@ export const routes: Routes = [
       import('./components/reports/reports').then((m) => m.Reports),
   },
   {
-    path: 'dias-no-laborales',
+    path: 'settings',
+    loadComponent: () =>
+      import('./components/settings/settings').then((m) => m.Settings),
+  },
+  {
+    path: 'settings/dias-no-laborales',
     loadComponent: () =>
       import('./components/dias-no-laborales/dias-no-laborales').then(
         (m) => m.DiasNoLaborales

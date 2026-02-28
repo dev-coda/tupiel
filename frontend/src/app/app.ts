@@ -41,9 +41,9 @@ export class App implements OnInit {
       routerLink: '/schema',
     },
     {
-      label: 'Días No Laborales',
-      icon: 'pi pi-calendar-times',
-      routerLink: '/dias-no-laborales',
+      label: 'Configuración',
+      icon: 'pi pi-cog',
+      routerLink: '/settings',
     },
   ];
 

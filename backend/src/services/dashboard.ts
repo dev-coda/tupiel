@@ -12,6 +12,7 @@ import {
   PersonBudget,
   ProductTarget,
 } from '../config/controlador-config';
+import { calculateWorkingDays, calculateWorkingDaysFallback } from './working-days';
 
 // ─── Helpers ───────────────────────────────────────────────
 
@@ -144,6 +145,16 @@ export async function generateDashboardData(
 ): Promise<DashboardData> {
   const cfg: ControladorConfig = { ...DEFAULT_CONFIG, ...config };
 
+  // Calculate working days dynamically from database
+  try {
+    const workingDays = await calculateWorkingDays(dateFrom, dateTo);
+    cfg.diasHabilesMes = workingDays;
+    console.log(`Calculated ${workingDays} working days from ${dateFrom} to ${dateTo}`);
+  } catch (err) {
+    console.warn('Failed to calculate working days from database, using fallback:', err);
+    cfg.diasHabilesMes = calculateWorkingDaysFallback(dateFrom, dateTo);
+  }
+
   // Auto-compute diasEjecutados
   if (cfg.diasEjecutados === 0) {
     const today = new Date();
@@ -151,7 +162,14 @@ export async function generateDashboardData(
     const diffDays = Math.floor(
       (today.getTime() - monthStart.getTime()) / 86_400_000
     );
-    cfg.diasEjecutados = Math.max(1, Math.min(diffDays, cfg.diasHabilesMes));
+    // Calculate working days executed so far
+    try {
+      const todayStr = today.toISOString().substring(0, 10);
+      const workingDaysExecuted = await calculateWorkingDays(dateFrom, todayStr);
+      cfg.diasEjecutados = Math.max(1, Math.min(workingDaysExecuted, cfg.diasHabilesMes));
+    } catch (err) {
+      cfg.diasEjecutados = Math.max(1, Math.min(diffDays, cfg.diasHabilesMes));
+    }
   }
 
   console.log('Dashboard: fetching data…');

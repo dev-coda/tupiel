@@ -1,0 +1,31 @@
+<div class="settings-container">
+  <h2>
+    <i class="pi pi-cog"></i>
+    Configuración
+  </h2>
+
+  <div class="settings-grid">
+    @for (item of settingsItems; track item.route) {
+      <p-card [styleClass]="'setting-card'">
+        <div class="setting-content">
+          <div class="setting-icon" [style.background]="item.color + '20'">
+            <i [class]="item.icon" [style.color]="item.color"></i>
+          </div>
+          <div class="setting-body">
+            <h3>{{ item.title }}</h3>
+            <p>{{ item.description }}</p>
+          </div>
+          <div class="setting-action">
+            <p-button
+              label="Gestionar"
+              icon="pi pi-arrow-right"
+              [routerLink]="item.route"
+              severity="primary"
+              [outlined]="true"
+            />
+          </div>
+        </div>
+      </p-card>
+    }
+  </div>
+</div>

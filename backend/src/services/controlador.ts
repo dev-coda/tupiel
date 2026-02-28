@@ -13,6 +13,7 @@ import {
   DEFAULT_CONFIG,
   PersonBudget,
 } from '../config/controlador-config';
+import { calculateWorkingDays, calculateWorkingDaysFallback } from './working-days';
 
 // ─── Helpers ───────────────────────────────────────────────
 
@@ -190,14 +191,31 @@ export async function generateControlador(
 ): Promise<ExcelJS.Workbook> {
   const cfg: ControladorConfig = { ...DEFAULT_CONFIG, ...config };
 
+  // Calculate working days dynamically from database
+  try {
+    const workingDays = await calculateWorkingDays(dateFrom, dateTo);
+    cfg.diasHabilesMes = workingDays;
+    console.log(`Controlador: calculated ${workingDays} working days from ${dateFrom} to ${dateTo}`);
+  } catch (err) {
+    console.warn('Controlador: failed to calculate working days from database, using fallback:', err);
+    cfg.diasHabilesMes = calculateWorkingDaysFallback(dateFrom, dateTo);
+  }
+
   // Auto-compute diasEjecutados if not set
   if (cfg.diasEjecutados === 0) {
     const today = new Date();
     const monthStart = new Date(dateFrom + 'T00:00:00');
-    const diffDays = Math.floor(
-      (today.getTime() - monthStart.getTime()) / 86_400_000
-    );
-    cfg.diasEjecutados = Math.max(1, Math.min(diffDays, cfg.diasHabilesMes));
+    // Calculate working days executed so far
+    try {
+      const todayStr = today.toISOString().substring(0, 10);
+      const workingDaysExecuted = await calculateWorkingDays(dateFrom, todayStr);
+      cfg.diasEjecutados = Math.max(1, Math.min(workingDaysExecuted, cfg.diasHabilesMes));
+    } catch (err) {
+      const diffDays = Math.floor(
+        (today.getTime() - monthStart.getTime()) / 86_400_000
+      );
+      cfg.diasEjecutados = Math.max(1, Math.min(diffDays, cfg.diasHabilesMes));
+    }
   }
 
   // ── 1. Fetch both source reports ──
