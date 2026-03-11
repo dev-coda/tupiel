@@ -11,6 +11,11 @@ import {
 import { RentabilidadReport } from '../models/rentabilidad.model';
 import { EstimadaReport } from '../models/estimada.model';
 import { DashboardData } from '../models/dashboard.model';
+import {
+  DiasNoLaboralesResponse,
+  DiaNoLaboralResponse,
+  AddSundaysResponse,
+} from '../models/dias-no-laborales.model';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
@@ -74,10 +79,10 @@ export class ApiService {
   }
 
   /** Get dashboard data as JSON for visualization */
-  getDashboard(from: string, to: string): Observable<DashboardData> {
+  getDashboard(from: string, to: string, pagoSi: boolean = true): Observable<DashboardData> {
     return this.http.get<DashboardData>(
       `${this.baseUrl}/dashboard`,
-      { params: { from, to } }
+      { params: { from, to, pagoSi: String(pagoSi) } }
     );
   }
 
@@ -131,4 +136,53 @@ export class ApiService {
       year,
     });
   }
+
+  // ── Monthly Config ──
+  getMonthlyConfig(year: number, month: number, from?: string, to?: string): Observable<any> {
+    const params: any = { year, month };
+    if (from) params.from = from;
+    if (to) params.to = to;
+    return this.http.get(`${this.baseUrl}/monthly-config`, { params });
+  }
+
+  saveMonthlyConfig(year: number, month: number, config: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/monthly-config`, { year, month, config });
+  }
+
+  getMonthlyConfigHistory(year: number, month: number): Observable<any> {
+    return this.http.get(`${this.baseUrl}/monthly-config/history`, {
+      params: { year, month },
+    });
+  }
+
+  // ── Saved Reports ──
+  getSavedReports(filters?: {
+    reportType?: string;
+    dateFrom?: string;
+    dateTo?: string;
+    limit?: number;
+  }): Observable<any> {
+    return this.http.get(`${this.baseUrl}/saved-reports`, { params: filters });
+  }
+
+  getSavedReport(id: number): Observable<SavedReport> {
+    return this.http.get<SavedReport>(`${this.baseUrl}/saved-reports/${id}`);
+  }
+
+  triggerDailyReportsSave(): Observable<any> {
+    return this.http.post(`${this.baseUrl}/saved-reports/trigger`, {});
+  }
+}
+
+interface SavedReport {
+  id: number;
+  report_date: string;
+  report_type: 'dashboard' | 'controlador' | 'rentabilidad' | 'estimada';
+  date_from: string;
+  date_to: string;
+  config_version: number | null;
+  report_data: string | null;
+  file_path: string | null;
+  file_size: number | null;
+  created_at: string;
 }

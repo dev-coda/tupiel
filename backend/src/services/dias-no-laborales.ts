@@ -17,7 +17,7 @@ export async function getAllDiasNoLaborales(): Promise<DiaNoLaboral[]> {
   const result = await appQuery(
     'SELECT id, fecha, descripcion, created_at, updated_at FROM dias_no_laborales ORDER BY fecha DESC'
   );
-  return result.rows as DiaNoLaboral[];
+  return result.rows as unknown as DiaNoLaboral[];
 }
 
 /**
@@ -28,7 +28,7 @@ export async function getDiaNoLaboralById(id: number): Promise<DiaNoLaboral | nu
     'SELECT id, fecha, descripcion, created_at, updated_at FROM dias_no_laborales WHERE id = ?',
     [id]
   );
-  return result.rows.length > 0 ? (result.rows[0] as DiaNoLaboral) : null;
+  return result.rows.length > 0 ? (result.rows[0] as unknown as DiaNoLaboral) : null;
 }
 
 /**

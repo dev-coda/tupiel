@@ -6,30 +6,54 @@ const router = Router();
 
 /**
  * GET /api/db-toggle
- * Returns current database mode (local or remote)
+ * Returns current database mode
+ * 
+ * - remote/production: Live production database (DigitalOcean) - READ-ONLY
+ * - local: Local database dump - for testing/development
  */
 router.get('/', (_req: Request, res: Response) => {
   try {
     const envPath = join(process.cwd(), '.env');
     const envContent = readFileSync(envPath, 'utf-8');
     const useLocal = envContent.includes('USE_LOCAL_DB=true') || envContent.includes('USE_LOCAL_DB=1');
-    res.json({ useLocal, mode: useLocal ? 'local' : 'remote' });
+    res.json({ 
+      useLocal, 
+      mode: useLocal ? 'local' : 'production',
+      description: useLocal 
+        ? 'Using local database dump (for testing)' 
+        : 'Using live production database (read-only)'
+    });
   } catch (err) {
     console.error('Error reading DB toggle:', err);
-    res.json({ useLocal: false, mode: 'remote' });
+    // Default to production
+    res.json({ 
+      useLocal: false, 
+      mode: 'production',
+      description: 'Using live production database (read-only)'
+    });
   }
 });
 
 /**
  * POST /api/db-toggle
- * Toggles between local and remote database
+ * Toggles between local dump and production database
+ * 
  * Body: { useLocal: boolean }
+ * - useLocal: true = use local database dump
+ * - useLocal: false = use live production database (default)
  */
 router.post('/', (req: Request, res: Response) => {
   try {
     const { useLocal } = req.body;
     const envPath = join(process.cwd(), '.env');
-    let envContent = readFileSync(envPath, 'utf-8');
+    let envContent = '';
+    
+    try {
+      envContent = readFileSync(envPath, 'utf-8');
+    } catch (err) {
+      // .env doesn't exist, create it
+      envContent = '';
+    }
 
     // Remove existing USE_LOCAL_DB lines
     envContent = envContent.replace(/^USE_LOCAL_DB=.*$/gm, '');
@@ -46,8 +70,8 @@ router.post('/', (req: Request, res: Response) => {
     res.json({
       success: true,
       useLocal,
-      mode: useLocal ? 'local' : 'remote',
-      message: `Switched to ${useLocal ? 'local' : 'remote'} database. Restart the server for changes to take effect.`,
+      mode: useLocal ? 'local' : 'production',
+      message: `Switched to ${useLocal ? 'local database dump' : 'live production database'}. Restart the server for changes to take effect.`,
     });
   } catch (err) {
     console.error('Error toggling DB:', err);

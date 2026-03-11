@@ -92,6 +92,34 @@ The application will be available at:
 - Frontend: http://localhost:4200
 - Backend API: http://localhost:3000
 
+### Local development (DB in Docker only)
+
+To run **only the database** in Docker and the frontend/backend on your machine (deploy config is untouched):
+
+1. **Start the DB**
+   ```bash
+   docker compose -f docker-compose.dev.yml up -d
+   ```
+   Uses MySQL on `localhost:3308` (mapped from container 3306 to avoid conflict with other MySQL). Database `tupiel_app`, user `tupiel_app`, password `localdev` by default.
+
+2. **Backend**
+   ```bash
+   cp backend/.env.example backend/.env
+   # Edit backend/.env if needed (APP_DB_* defaults match docker-compose.dev.yml)
+   cd backend && npm run dev
+   ```
+
+3. **Frontend** (in another terminal)
+   ```bash
+   cd frontend && pnpm start
+   ```
+   The dev server proxies `/api` to `http://localhost:3000`.
+
+- Frontend: http://localhost:4200  
+- Backend: http://localhost:3000  
+
+To stop the DB: `docker compose -f docker-compose.dev.yml down`.
+
 ## Database Toggle
 
 You can toggle between local and remote databases using:

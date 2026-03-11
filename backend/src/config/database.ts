@@ -1,28 +1,74 @@
 import mysql, { Pool, PoolConnection } from 'mysql2/promise';
 import dotenv from 'dotenv';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
 dotenv.config();
 
-// Determine which database to use
+/**
+ * Production Database Configuration
+ * 
+ * By default, connects to the live production database (DigitalOcean).
+ * This is READ-ONLY and used for all report generation.
+ * 
+ * To use a local database dump instead, set USE_LOCAL_DB=true in .env
+ */
 const useLocalDb = process.env.USE_LOCAL_DB === 'true' || process.env.USE_LOCAL_DB === '1';
+
+// Load production DB credentials from enviroment file if not in .env
+let prodDbConfig = {
+  host: process.env.DB_HOST,
+  port: parseInt(process.env.DB_PORT || '25060', 10),
+  database: process.env.DB_NAME || 'tupiel',
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+};
+
+// If production credentials are not in .env, try to load from enviroment file
+if (!prodDbConfig.host || !prodDbConfig.user || !prodDbConfig.password) {
+  try {
+    const envFile = readFileSync(join(process.cwd(), 'enviroment'), 'utf-8');
+    const lines = envFile.split('\n');
+    for (const line of lines) {
+      if (line.startsWith('SERVER=')) {
+        const server = line.split('=')[1].trim();
+        const [host, port] = server.split(':');
+        prodDbConfig.host = host;
+        prodDbConfig.port = parseInt(port || '25060', 10);
+      } else if (line.startsWith('DB=')) {
+        prodDbConfig.database = line.split('=')[1].trim();
+      } else if (line.startsWith('USER=')) {
+        prodDbConfig.user = line.split('=')[1].trim();
+      } else if (line.startsWith('PWD=')) {
+        prodDbConfig.password = line.split('=')[1].trim();
+      }
+    }
+  } catch (err) {
+    console.warn('Could not load credentials from enviroment file:', err);
+  }
+}
 
 const dbConfig = useLocalDb
   ? {
+      // Local database (for testing with dump)
       host: process.env.LOCAL_DB_HOST || 'localhost',
       port: parseInt(process.env.LOCAL_DB_PORT || '3306', 10),
-      database: process.env.LOCAL_DB_NAME || process.env.DB_NAME,
+      database: process.env.LOCAL_DB_NAME || process.env.DB_NAME || 'tupiel',
       user: process.env.LOCAL_DB_USER || 'root',
       password: process.env.LOCAL_DB_PASSWORD || '',
     }
   : {
-      host: process.env.DB_HOST,
-      port: parseInt(process.env.DB_PORT || '25060', 10),
-      database: process.env.DB_NAME,
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
+      // Production database (READ-ONLY)
+      ...prodDbConfig,
     };
 
-console.log(`Using ${useLocalDb ? 'LOCAL' : 'REMOTE'} database: ${dbConfig.host}:${dbConfig.port}/${dbConfig.database}`);
+if (!dbConfig.host || !dbConfig.user || !dbConfig.password) {
+  throw new Error(
+    'Missing database credentials. Set DB_HOST, DB_USER, DB_PASSWORD in .env or use enviroment file.'
+  );
+}
+
+console.log(`📊 Using ${useLocalDb ? 'LOCAL (DUMP)' : 'PRODUCTION (LIVE)'} database: ${dbConfig.host}:${dbConfig.port}/${dbConfig.database}`);
 
 const pool: Pool = mysql.createPool({
   ...dbConfig,
@@ -33,12 +79,18 @@ const pool: Pool = mysql.createPool({
 });
 
 /**
- * Execute a read-only query using a connection with READ ONLY transaction mode.
+ * Execute a read-only query on the production database.
+ * 
+ * This connects to the LIVE PRODUCTION database (DigitalOcean) by default.
+ * All report data (rentabilidad, estimada, dashboard, controlador) comes from here.
+ * 
+ * The connection is set to READ ONLY mode to prevent accidental writes.
  */
 export async function query(text: string, params?: (string | number | null)[]) {
   let conn: PoolConnection | undefined;
   try {
     conn = await pool.getConnection();
+    // Enforce read-only mode for safety
     await conn.query('SET SESSION TRANSACTION READ ONLY');
     const start = Date.now();
     const [rows] = await conn.execute(text, params);

@@ -1,9 +1,22 @@
 import mysql, { Pool, PoolConnection } from 'mysql2/promise';
+import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Local app database configuration (separate from production read-only DB)
+/**
+ * App Database Configuration (Local Read-Write)
+ * 
+ * This is a LOCAL database used for application-specific data that requires writes:
+ * - dias_no_laborales (non-working days)
+ * - monthly_configs (monthly configuration versions)
+ * - employee_presupuestos (employee budgets)
+ * - product_metas (product targets)
+ * - saved_reports (daily report snapshots)
+ * 
+ * This is SEPARATE from the production database which is read-only.
+ * The production database is used for all report data (rentabilidad, estimada, etc.)
+ */
 const appDbConfig = {
   host: process.env.APP_DB_HOST || 'localhost',
   port: parseInt(process.env.APP_DB_PORT || '3306', 10),
@@ -12,7 +25,7 @@ const appDbConfig = {
   password: process.env.APP_DB_PASSWORD || '',
 };
 
-console.log(`App database: ${appDbConfig.host}:${appDbConfig.port}/${appDbConfig.database}`);
+console.log(`💾 App database (local read-write): ${appDbConfig.host}:${appDbConfig.port}/${appDbConfig.database}`);
 
 const appPool: Pool = mysql.createPool({
   ...appDbConfig,
@@ -48,11 +61,10 @@ export async function initAppDatabase(): Promise<void> {
   try {
     conn = await appPool.getConnection();
     
-    // Create database if it doesn't exist
-    await conn.query(`CREATE DATABASE IF NOT EXISTS ${appDbConfig.database}`);
-    await conn.query(`USE ${appDbConfig.database}`);
+    // Test connection first
+    await conn.query('SELECT 1');
     
-    // Create dias_no_laborales table
+    // Create dias_no_laborales table (database should already exist)
     await conn.query(`
       CREATE TABLE IF NOT EXISTS dias_no_laborales (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -64,10 +76,105 @@ export async function initAppDatabase(): Promise<void> {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
     
+    // Create monthly_configs table - stores monthly configuration snapshots
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS monthly_configs (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        year INT NOT NULL,
+        month INT NOT NULL,
+        version INT NOT NULL DEFAULT 1,
+        meta_global DECIMAL(15, 2) NOT NULL,
+        meta_productos DECIMAL(15, 2) NOT NULL,
+        facturado_productos DECIMAL(15, 2) NOT NULL DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY uk_year_month_version (year, month, version),
+        INDEX idx_year_month (year, month),
+        INDEX idx_created_at (created_at)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    
+    // Create employee_presupuestos table - stores employee budgets per month/version
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS employee_presupuestos (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        config_id INT NOT NULL,
+        nombre VARCHAR(255) NOT NULL,
+        categoria ENUM('DERMATOLOGÍA', 'MED ESTÉTICA', 'TP LOUNGE') NOT NULL,
+        presupuesto DECIMAL(15, 2) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (config_id) REFERENCES monthly_configs(id) ON DELETE CASCADE,
+        INDEX idx_config_id (config_id),
+        INDEX idx_nombre (nombre)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    
+    // Create product_metas table - stores product targets per month/version
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS product_metas (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        config_id INT NOT NULL,
+        producto_nombre VARCHAR(255) NOT NULL,
+        meta INT NOT NULL,
+        disponibles INT NOT NULL DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (config_id) REFERENCES monthly_configs(id) ON DELETE CASCADE,
+        INDEX idx_config_id (config_id),
+        INDEX idx_producto (producto_nombre)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    
+    // Create saved_reports table - stores daily automated report snapshots
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS saved_reports (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        report_date DATE NOT NULL,
+        report_type ENUM('dashboard', 'controlador', 'rentabilidad', 'estimada') NOT NULL,
+        date_from DATE NOT NULL,
+        date_to DATE NOT NULL,
+        config_version INT NULL,
+        report_data LONGTEXT NULL,
+        file_path VARCHAR(500) NULL,
+        file_size BIGINT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_report_date (report_date),
+        INDEX idx_report_type (report_type),
+        INDEX idx_date_range (date_from, date_to),
+        INDEX idx_created_at (created_at)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    // Create users table for authentication
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        username VARCHAR(100) NOT NULL UNIQUE,
+        name VARCHAR(255) NOT NULL,
+        password_hash VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    // Seed default user if no users exist
+    const [existingUsers] = await conn.query('SELECT COUNT(*) AS cnt FROM users');
+    const userCount = (existingUsers as Array<{ cnt: number }>)[0].cnt;
+    if (userCount === 0) {
+      const hash = await bcrypt.hash('DidierTuPiel2025', 10);
+      await conn.query(
+        'INSERT INTO users (username, name, password_hash) VALUES (?, ?, ?)',
+        ['Didier', 'Didier', hash]
+      );
+      console.log('👤 Default user "Didier" seeded');
+    }
+    
     console.log('✅ App database initialized successfully');
   } catch (err) {
-    console.error('❌ Failed to initialize app database:', err);
-    throw err;
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    console.error('❌ Failed to initialize app database:', errorMessage);
+    // Don't throw - allow app to continue even if table creation fails
+    // The table might already exist or permissions might be limited
+    console.warn('⚠️  Continuing without app database initialization. Some features may not work.');
   } finally {
     if (conn) conn.release();
   }

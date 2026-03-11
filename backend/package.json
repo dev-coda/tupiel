@@ -10,16 +10,22 @@
     "report:rentabilidad": "ts-node --transpile-only src/cli/generate-rentabilidad.ts"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "exceljs": "^4.4.0",
     "express": "^4.21.2",
-    "mysql2": "^3.18.1"
+    "jsonwebtoken": "^9.0.3",
+    "mysql2": "^3.18.1",
+    "node-cron": "^3.0.3"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^22.10.0",
+    "@types/node-cron": "^3.0.11",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.7.0"
   }

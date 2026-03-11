@@ -1,0 +1,26 @@
+# Local dev: DB only. Frontend and backend run on the host.
+# Usage:
+#   docker compose -f docker-compose.dev.yml up -d
+#   cd backend && npm run dev
+#   cd frontend && pnpm start
+#
+# Does not modify deploy/ or production config.
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: tupiel-mysql-dev
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${APP_DB_ROOT_PASSWORD:-localroot}
+      MYSQL_DATABASE: tupiel_app
+      MYSQL_USER: tupiel_app
+      MYSQL_PASSWORD: ${APP_DB_PASSWORD:-localdev}
+    ports:
+      - "127.0.0.1:3308:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${APP_DB_ROOT_PASSWORD:-localroot}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s

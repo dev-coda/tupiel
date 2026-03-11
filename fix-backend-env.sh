@@ -15,6 +15,13 @@ echo ""
 RDS_ENDPOINT="tupiel-db.culyguuuy7g1.us-east-1.rds.amazonaws.com"
 echo -e "${GREEN}RDS Endpoint: ${RDS_ENDPOINT}${NC}"
 
+# Production database (DigitalOcean) credentials
+PROD_DB_HOST="tupiel-privado-do-user-1309890-0.j.db.ondigitalocean.com"
+PROD_DB_PORT="25060"
+PROD_DB_NAME="tupiel"
+PROD_DB_USER="tupiel_u"
+PROD_DB_PASSWORD="kHcdSD0j[Gwk*Sz@"
+
 # Get database password
 echo -n "Enter RDS database password: "
 read -s DB_PASSWORD
@@ -47,12 +54,17 @@ cat > /tmp/backend-update-env.json <<EOF
         "RuntimeEnvironmentVariables": {
           "NODE_ENV": "production",
           "PORT": "3000",
-          "DB_HOST": "${RDS_ENDPOINT}",
-          "DB_PORT": "3306",
-          "DB_NAME": "tupiel",
-          "DB_USER": "admin",
-          "DB_PASSWORD": "${DB_PASSWORD}",
-          "USE_LOCAL_DB": "false"
+          "DB_HOST": "${PROD_DB_HOST}",
+          "DB_PORT": "${PROD_DB_PORT}",
+          "DB_NAME": "${PROD_DB_NAME}",
+          "DB_USER": "${PROD_DB_USER}",
+          "DB_PASSWORD": "${PROD_DB_PASSWORD}",
+          "USE_LOCAL_DB": "false",
+          "APP_DB_HOST": "${RDS_ENDPOINT}",
+          "APP_DB_PORT": "3306",
+          "APP_DB_NAME": "tupiel_app",
+          "APP_DB_USER": "admin",
+          "APP_DB_PASSWORD": "${DB_PASSWORD}"
         }
       }
     },

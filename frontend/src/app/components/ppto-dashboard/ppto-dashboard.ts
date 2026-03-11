@@ -19,6 +19,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { ChartModule } from 'primeng/chart';
 import { TabsModule } from 'primeng/tabs';
 import { SelectModule } from 'primeng/select';
+import { ToggleSwitchModule } from 'primeng/toggleswitch';
 
 import { saveAs } from 'file-saver';
 import { ApiService } from '../../services/api.service';
@@ -29,6 +30,7 @@ import {
   DailyMetrics,
   ProductMetrics,
   StrategyMetrics,
+  ServiceSubcategoryMetrics,
 } from '../../models/dashboard.model';
 
 @Component({
@@ -53,6 +55,7 @@ import {
     ChartModule,
     TabsModule,
     SelectModule,
+    ToggleSwitchModule,
   ],
   templateUrl: './ppto-dashboard.html',
   styleUrl: './ppto-dashboard.scss',
@@ -63,7 +66,8 @@ export class PptoDashboard implements OnInit {
 
   // ── Controls ──
   dateFrom = signal<Date>(this.getFirstOfMonth());
-  dateTo = signal<Date>(new Date());
+  dateTo = signal<Date>(this.getLastOfMonth());
+  pagoSi = signal(true);
   loading = signal(false);
   error = signal<string | null>(null);
 
@@ -96,6 +100,14 @@ export class PptoDashboard implements OnInit {
   strategy = computed(() => this.dashData()?.strategy ?? null);
   businessUnits = computed(() => this.dashData()?.businessUnits ?? []);
   products = computed(() => this.dashData()?.products ?? []);
+  servicesBySubcategory = computed(() => this.dashData()?.servicesBySubcategory ?? []);
+  servicesTotals = computed(() => {
+    const svcs = this.servicesBySubcategory();
+    return {
+      atenciones: svcs.reduce((s, v) => s + v.atenciones, 0),
+      venta: svcs.reduce((s, v) => s + v.venta, 0),
+    };
+  });
   weeklySummaries = computed(() => this.dashData()?.weeklySummaries ?? []);
 
   // Personnel by group
@@ -115,6 +127,14 @@ export class PptoDashboard implements OnInit {
     const filtered = daily.filter(
       (d) => d.serviciosPrestados > 0 || d.gestionComercial > 0
     );
+
+    const facturadoData = filtered.map((d) => d.facturado);
+    const carteraData = filtered.map((d) => d.cartera);
+    const gestionData = filtered.map((d) => d.gestionComercial);
+    const metaData = filtered.map((d) => d.metaDia);
+
+    const sumM = (arr: number[]) => '$' + (arr.reduce((s, v) => s + v, 0) / 1_000_000).toFixed(3) + 'M';
+
     return {
       labels: filtered.map((d) => {
         const dt = new Date(d.fecha + 'T12:00:00');
@@ -122,24 +142,24 @@ export class PptoDashboard implements OnInit {
       }),
       datasets: [
         {
-          label: 'Facturado',
-          data: filtered.map((d) => d.facturado),
+          label: `Facturado: ${sumM(facturadoData)}`,
+          data: facturadoData,
           backgroundColor: 'rgba(34, 197, 94, 0.7)',
           borderColor: '#22c55e',
           borderWidth: 1,
           stack: 'servicios',
         },
         {
-          label: 'Cartera',
-          data: filtered.map((d) => d.cartera),
+          label: `Cartera: ${sumM(carteraData)}`,
+          data: carteraData,
           backgroundColor: 'rgba(249, 115, 22, 0.7)',
           borderColor: '#f97316',
           borderWidth: 1,
           stack: 'servicios',
         },
         {
-          label: 'Gestión Comercial (Est.)',
-          data: filtered.map((d) => d.gestionComercial),
+          label: `Gestión Comercial (Est.): ${sumM(gestionData)}`,
+          data: gestionData,
           backgroundColor: 'rgba(59, 130, 246, 0.5)',
           borderColor: '#3b82f6',
           borderWidth: 1,
@@ -147,8 +167,8 @@ export class PptoDashboard implements OnInit {
         },
         {
           type: 'line' as const,
-          label: 'Meta Día',
-          data: filtered.map((d) => d.metaDia),
+          label: `Meta Día: ${sumM(metaData)}`,
+          data: metaData,
           borderColor: '#ef4444',
           borderWidth: 2,
           borderDash: [6, 4],
@@ -172,7 +192,7 @@ export class PptoDashboard implements OnInit {
       },
     },
     plugins: {
-      legend: { position: 'top' as const, labels: { usePointStyle: true } },
+      legend: { display: false },
       tooltip: {
         callbacks: {
           label: (ctx: any) => {
@@ -196,18 +216,21 @@ export class PptoDashboard implements OnInit {
 
   businessUnitChartData = computed(() => {
     const units = this.businessUnits();
+    const totalVenta = units.reduce((sum, u) => sum + u.venta, 0);
+    const totalMeta = units.reduce((sum, u) => sum + u.meta, 0);
+    
     return {
-      labels: units.map((u) => u.nombre),
+      labels: [...units.map((u) => u.nombre), 'Total'],
       datasets: [
         {
           label: 'Venta',
-          data: units.map((u) => u.venta),
+          data: [...units.map((u) => u.venta), totalVenta],
           backgroundColor: 'rgba(34, 197, 94, 0.8)',
           borderRadius: 4,
         },
         {
           label: 'Meta',
-          data: units.map((u) => u.meta),
+          data: [...units.map((u) => u.meta), totalMeta],
           backgroundColor: 'rgba(156, 163, 175, 0.4)',
           borderColor: '#9ca3af',
           borderWidth: 1,
@@ -313,6 +336,11 @@ export class PptoDashboard implements OnInit {
     return d;
   }
 
+  private getLastOfMonth(): Date {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth() + 1, 0); // Last day of current month
+  }
+
   private fmtDate(d: Date): string {
     return d.toISOString().split('T')[0];
   }
@@ -326,7 +354,7 @@ export class PptoDashboard implements OnInit {
     const from = this.fmtDate(this.dateFrom());
     const to = this.fmtDate(this.dateTo());
 
-    this.api.getDashboard(from, to).subscribe({
+    this.api.getDashboard(from, to, this.pagoSi()).subscribe({
       next: (data) => {
         this.dashData.set(data);
         this.loading.set(false);
@@ -338,6 +366,10 @@ export class PptoDashboard implements OnInit {
         this.loading.set(false);
       },
     });
+  }
+
+  onPagoSiToggle() {
+    this.loadDashboard();
   }
 
   // ── Download the Excel report ──
@@ -376,12 +408,28 @@ export class PptoDashboard implements OnInit {
 
   fmtCurrencyM(val: number | null | undefined): string {
     if (val == null) return '$0M';
-    return '$' + (val / 1_000_000).toFixed(1) + 'M';
+    return '$' + (val / 1_000_000).toFixed(3) + 'M';
   }
 
   fmtPct(val: number | null | undefined): string {
     if (val == null) return '0%';
     return (val * 100).toFixed(1) + '%';
+  }
+
+  getTodayDate(): string {
+    const today = new Date();
+    return today.toLocaleDateString('es-CO', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  }
+
+  getFacturadoPct(): number {
+    const s = this.strategy();
+    if (!s || s.metaGlobal === 0) return 0;
+    return s.facturado / s.metaGlobal;
   }
 
   progressColor(pct: number): string {
@@ -407,6 +455,7 @@ export class PptoDashboard implements OnInit {
     atenciones: number;
     venta: number;
     presupuesto: number;
+    ventaIdeal: number;
     proyeccion: number;
     pctVenta: number;
     pctEsperado: number;
@@ -414,11 +463,13 @@ export class PptoDashboard implements OnInit {
     const atenciones = group.reduce((s, p) => s + p.atenciones, 0);
     const venta = group.reduce((s, p) => s + p.venta, 0);
     const presupuesto = group.reduce((s, p) => s + p.presupuesto, 0);
+    const ventaIdeal = group.reduce((s, p) => s + p.ventaIdeal, 0);
     const proyeccion = group.reduce((s, p) => s + p.proyeccion, 0);
     return {
       atenciones,
       venta,
       presupuesto,
+      ventaIdeal,
       proyeccion,
       pctVenta: presupuesto > 0 ? venta / presupuesto : 0,
       pctEsperado: presupuesto > 0 ? (venta + proyeccion) / presupuesto : 0,

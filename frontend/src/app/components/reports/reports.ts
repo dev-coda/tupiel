@@ -50,7 +50,7 @@ export class Reports {
   // ── Controls ──
   reportType = signal<ReportType>('rentabilidad');
   dateFrom = signal<Date>(this.getFirstOfMonth());
-  dateTo = signal<Date>(new Date());
+  dateTo = signal<Date>(this.getLastOfMonth());
   loading = signal(false);
   error = signal<string | null>(null);
 
@@ -120,6 +120,11 @@ export class Reports {
     const d = new Date();
     d.setDate(1);
     return d;
+  }
+
+  private getLastOfMonth(): Date {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth() + 1, 0); // Last day of current month
   }
 
   private fmtDate(d: Date): string {

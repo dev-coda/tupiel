@@ -14,6 +14,7 @@ import {
   PersonBudget,
 } from '../config/controlador-config';
 import { calculateWorkingDays, calculateWorkingDaysFallback } from './working-days';
+import { getMonthlyConfig } from './monthly-config';
 
 // ─── Helpers ───────────────────────────────────────────────
 
@@ -189,34 +190,49 @@ export async function generateControlador(
   dateTo: string,
   config: Partial<ControladorConfig> = {}
 ): Promise<ExcelJS.Workbook> {
-  const cfg: ControladorConfig = { ...DEFAULT_CONFIG, ...config };
+  // Extract year/month from dateFrom
+  const dateFromObj = new Date(dateFrom + 'T00:00:00');
+  const year = dateFromObj.getFullYear();
+  const month = dateFromObj.getMonth() + 1;
 
-  // Calculate working days dynamically from database
+  // Load config from database (with fallback to defaults)
+  let cfg: ControladorConfig;
   try {
-    const workingDays = await calculateWorkingDays(dateFrom, dateTo);
-    cfg.diasHabilesMes = workingDays;
-    console.log(`Controlador: calculated ${workingDays} working days from ${dateFrom} to ${dateTo}`);
+    cfg = await getMonthlyConfig(year, month, dateFrom, dateTo);
+    console.log(`✅ Controlador: loaded monthly config from database for ${year}-${month}`);
   } catch (err) {
-    console.warn('Controlador: failed to calculate working days from database, using fallback:', err);
-    cfg.diasHabilesMes = calculateWorkingDaysFallback(dateFrom, dateTo);
-  }
-
-  // Auto-compute diasEjecutados if not set
-  if (cfg.diasEjecutados === 0) {
-    const today = new Date();
-    const monthStart = new Date(dateFrom + 'T00:00:00');
-    // Calculate working days executed so far
+    console.warn('Controlador: failed to load monthly config from database, using defaults:', err);
+    cfg = { ...DEFAULT_CONFIG };
+    
+    // Still calculate working days
     try {
-      const todayStr = today.toISOString().substring(0, 10);
-      const workingDaysExecuted = await calculateWorkingDays(dateFrom, todayStr);
+      const workingDays = await calculateWorkingDays(dateFrom, dateTo);
+      if (workingDays <= 0) {
+        throw new Error(`Invalid working days calculation: ${workingDays}`);
+      }
+      cfg.diasHabilesMes = workingDays;
+    } catch (err2) {
+      cfg.diasHabilesMes = calculateWorkingDaysFallback(dateFrom, dateTo);
+    }
+
+    // Auto-calculate dias ejecutados as past business days
+    const today = new Date();
+    const monthStart = new Date(year, month - 1, 1);
+    const todayStr = today.toISOString().substring(0, 10);
+    const monthStartStr = `${year}-${String(month).padStart(2, '0')}-01`;
+    
+    try {
+      const endDate = today < new Date(dateTo + 'T00:00:00') ? todayStr : dateTo;
+      const workingDaysExecuted = await calculateWorkingDays(monthStartStr, endDate);
       cfg.diasEjecutados = Math.max(1, Math.min(workingDaysExecuted, cfg.diasHabilesMes));
-    } catch (err) {
-      const diffDays = Math.floor(
-        (today.getTime() - monthStart.getTime()) / 86_400_000
-      );
+    } catch (err2) {
+      const diffDays = Math.floor((today.getTime() - monthStart.getTime()) / 86_400_000);
       cfg.diasEjecutados = Math.max(1, Math.min(diffDays, cfg.diasHabilesMes));
     }
   }
+
+  // Override with any provided config values
+  cfg = { ...cfg, ...config };
 
   // ── 1. Fetch both source reports ──
   // For the controlador, include ALL sub-categories (no filtering)
@@ -466,6 +482,7 @@ function buildStrategyPanel(
   const pctDif = pctRealCum - pctAlDia;
   const resultado = facturado + proyeccion;
   const pctResultado = cfg.metaGlobal > 0 ? resultado / cfg.metaGlobal : 0;
+  // Daily goal uses working days (not calendar days) - automatically adjusts when non-working days change
   const metaDiaria = cfg.metaGlobal / cfg.diasHabilesMes;
   const ventaEsperada = metaDiaria * cfg.diasEjecutados;
   const faltaCumplir = cfg.metaGlobal - facturado - proyeccion;
@@ -533,6 +550,7 @@ function buildBalancePptoTab(
 
   const pctAlDia = cfg.diasEjecutados / cfg.diasHabilesMes;
   const pctRealCum = totalFacturado / cfg.metaGlobal;
+  // Daily goal uses working days (not calendar days) - automatically adjusts when non-working days change
   const metaDiaria = cfg.metaGlobal / cfg.diasHabilesMes;
   const ventaEsperada = metaDiaria * cfg.diasEjecutados;
   const faltaCumplir = cfg.metaGlobal - totalFacturado - totalProyeccion;
@@ -848,6 +866,7 @@ function buildTableroAgendaTab(
   ws.getRow(1).getCell(15).value = 'FACTURADO';
   ws.getRow(1).getCell(16).value = 'DÍA HABIL';
 
+  // Daily goal uses working days (not calendar days) - automatically adjusts when non-working days change
   const metaDiaria = cfg.metaGlobal / cfg.diasHabilesMes;
   ws.getRow(3).getCell(12).value = metaDiaria;    ws.getRow(3).getCell(12).numFmt = MONEY_FMT;
   ws.getRow(3).getCell(14).value = new Date();     ws.getRow(3).getCell(14).numFmt = DATE_FMT;
@@ -954,6 +973,7 @@ function buildReporteXDiasTab(
   headers.forEach((h, i) => { hRow.getCell(i + 1).value = h; });
   styleHeaderRow(ws, 3, 8);
 
+  // Daily goal uses working days (not calendar days) - automatically adjusts when non-working days change
   const metaDia = cfg.metaGlobal / cfg.diasHabilesMes;
   const dates = dateRange(dateFrom, dateTo);
 

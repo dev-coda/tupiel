@@ -39,7 +39,7 @@
             />
           </div>
 
-          <p-table [value]="table.columns" [rows]="50" styleClass="p-datatable-sm p-datatable-striped">
+          <p-table [value]="table.columns" [rows]="50" [scrollable]="true" [tableStyle]="{'min-width': '50rem'}" styleClass="p-datatable-sm p-datatable-striped">
             <ng-template #header>
               <tr>
                 <th>Column</th>
@@ -109,6 +109,7 @@
     <p-table
       [value]="sampleData()"
       [scrollable]="true"
+      [tableStyle]="{'min-width': '50rem'}"
       scrollHeight="400px"
       styleClass="p-datatable-sm"
     >

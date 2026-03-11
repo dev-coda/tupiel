@@ -1,29 +1,45 @@
-<div class="app-container">
-  <p-menubar [model]="menuItems">
-    <ng-template #start>
-      <span class="app-logo">
-        <i class="pi pi-heart-fill" style="color: var(--p-primary-color); margin-right: 0.5rem;"></i>
-        <strong>TuPiel</strong>&nbsp;Reports
-      </span>
-    </ng-template>
-    <ng-template #end>
-      <div class="db-toggle-container">
-        <p-button
-          [label]="dbMode() === 'local' ? 'DB: Local' : 'DB: Remote'"
-          [icon]="dbMode() === 'local' ? 'pi pi-server' : 'pi pi-cloud'"
-          [severity]="dbMode() === 'local' ? 'success' : 'info'"
-          [outlined]="true"
-          [loading]="dbLoading()"
-          size="small"
-          (onClick)="toggleDb()"
-          [style]="{ 'white-space': 'nowrap' }"
-        />
-      </div>
-    </ng-template>
-  </p-menubar>
+@if (auth.isLoggedIn()) {
+  <div class="app-container">
+    <p-menubar [model]="menuItems">
+      <ng-template #start>
+        <span class="app-logo">
+          <i class="pi pi-heart-fill" style="color: var(--p-primary-color); margin-right: 0.5rem;"></i>
+          <strong>TuPiel</strong>&nbsp;Reports
+        </span>
+      </ng-template>
+      <ng-template #end>
+        <div class="navbar-end">
+          <span class="user-greeting">
+            <i class="pi pi-user"></i>
+            {{ auth.user()?.name }}
+          </span>
+          <p-button
+            [label]="dbMode() === 'local' ? 'DB: Local' : 'DB: Remote'"
+            [icon]="dbMode() === 'local' ? 'pi pi-server' : 'pi pi-cloud'"
+            [severity]="dbMode() === 'local' ? 'success' : 'info'"
+            [outlined]="true"
+            [loading]="dbLoading()"
+            size="small"
+            (onClick)="toggleDb()"
+            [style]="{ 'white-space': 'nowrap' }"
+          />
+          <p-button
+            icon="pi pi-sign-out"
+            severity="secondary"
+            [outlined]="true"
+            size="small"
+            pTooltip="Cerrar sesión"
+            (onClick)="logout()"
+          />
+        </div>
+      </ng-template>
+    </p-menubar>
 
-  <main class="app-content">
-    <router-outlet />
-  </main>
-  <p-toast />
-</div>
+    <main class="app-content">
+      <router-outlet />
+    </main>
+    <p-toast />
+  </div>
+} @else {
+  <router-outlet />
+}

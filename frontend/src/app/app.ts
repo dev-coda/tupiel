@@ -5,6 +5,7 @@ import { MenubarModule } from 'primeng/menubar';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 import { ApiService } from './services/api.service';
+import { AuthService } from './services/auth.service';
 import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 
@@ -31,6 +32,11 @@ export class App implements OnInit {
       routerLink: '/reports',
     },
     {
+      label: 'Reportes Guardados',
+      icon: 'pi pi-archive',
+      routerLink: '/saved-reports',
+    },
+    {
       label: 'DB Status',
       icon: 'pi pi-database',
       routerLink: '/dashboard',
@@ -49,11 +55,14 @@ export class App implements OnInit {
 
   constructor(
     private api: ApiService,
-    private messageService: MessageService
+    private messageService: MessageService,
+    public auth: AuthService
   ) {}
 
   ngOnInit() {
-    this.loadDbMode();
+    if (this.auth.isLoggedIn()) {
+      this.loadDbMode();
+    }
   }
 
   loadDbMode() {
@@ -90,5 +99,9 @@ export class App implements OnInit {
         this.dbLoading.set(false);
       },
     });
+  }
+
+  logout() {
+    this.auth.logout();
   }
 }

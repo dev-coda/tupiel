@@ -19,5 +19,12 @@ export class Settings {
       route: '/settings/dias-no-laborales',
       color: '#667eea',
     },
+    {
+      title: 'Configuración Mensual',
+      description: 'Configura metas globales, presupuestos por empleado y metas de productos por mes. Los cambios crean nuevas versiones preservando el historial.',
+      icon: 'pi pi-cog',
+      route: '/settings/monthly-config',
+      color: '#48bb78',
+    },
   ];
 }

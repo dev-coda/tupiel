@@ -44,45 +44,34 @@ export interface ControladorConfig {
 }
 
 /**
- * Default config based on the February 2026 reference file.
+ * Default config — ALL zeros.
+ * 
+ * Real values are loaded from the production database (employees, products)
+ * and the app database (saved monthly configurations with presupuesto/meta).
+ * 
+ * This default is only used as a last-resort fallback when both databases
+ * are unreachable.
  */
 export const DEFAULT_CONFIG: ControladorConfig = {
-  diasHabilesMes: 24,
-  diasEjecutados: 0,  // Will be auto-computed from date
-  metaGlobal: 520_000_000,
+  diasHabilesMes: 0,  // Auto-calculated from database
+  diasEjecutados: 0,  // Auto-computed from date
+  metaGlobal: 0,
 
-  dermatologia: [
-    { nombre: 'LUISA HERNANDEZ TEJADA', presupuesto: 80_000_000 },
-    { nombre: 'DANIELA ASTAROT SALAZAR URIBE', presupuesto: 110_000_000 },
-    { nombre: 'JURANY SANCHEZ', presupuesto: 110_000_000 },
-    { nombre: 'PAULA ANDREA ARISTIZABAL DIAZ', presupuesto: 30_000_000 },
-    { nombre: 'DAVID CHALARCA CANAS', presupuesto: 70_000_000 },
-  ],
+  dermatologia: [],
+  medEstetica: [],
+  lounge: [],
 
-  medEstetica: [
-    { nombre: 'MARIA CAMILA ZULUAGA ALVAREZ', presupuesto: 40_000_000 },
-    { nombre: 'STEPHANIA LAGUADO GONZALEZ', presupuesto: 40_000_000 },
-  ],
+  metaProductos: 0,
+  facturadoProductos: 0,
 
-  lounge: [
-    { nombre: 'LUISA FERNANDA CORREA HERNANDEZ', presupuesto: 8_000_000 },
-    { nombre: 'YANED FAYSURI RESTREPO', presupuesto: 8_000_000 },
-    { nombre: 'LINDA ELIANA AROCA LONDOÑO', presupuesto: 8_000_000 },
-    { nombre: 'ISABELLA GONZALEZ MEJIA', presupuesto: 8_000_000 },
-    { nombre: 'KAREN LORENA AMARIS GARCES', presupuesto: 8_000_000 },
-  ],
-
-  metaProductos: 60_000_000,
-  facturadoProductos: 47_404_171,
-
-  botox: { nombre: 'Botox', meta: 5000, disponibles: 12031 },
-  radiesse: { nombre: 'Radiesse', meta: 20, disponibles: 46 },
-  harmonyca: { nombre: 'Harmonyca', meta: 20, disponibles: 86 },
-  skinvive: { nombre: 'Skinvive', meta: 17, disponibles: 2 },
+  botox: { nombre: 'Botox', meta: 0, disponibles: 0 },
+  radiesse: { nombre: 'Radiesse', meta: 0, disponibles: 0 },
+  harmonyca: { nombre: 'Harmonyca', meta: 0, disponibles: 0 },
+  skinvive: { nombre: 'Skinvive', meta: 0, disponibles: 0 },
   belotero: {
-    balance: { nombre: 'AH Balance', meta: 10, disponibles: 40 },
-    intense: { nombre: 'AH Intense', meta: 20, disponibles: 64 },
-    volume: { nombre: 'AH Volume', meta: 4, disponibles: 19 },
-    revive: { nombre: 'AH Revive', meta: 3, disponibles: 3 },
+    balance: { nombre: 'Belotero Balance', meta: 0, disponibles: 0 },
+    intense: { nombre: 'Belotero Intense', meta: 0, disponibles: 0 },
+    volume: { nombre: 'Belotero Volume', meta: 0, disponibles: 0 },
+    revive: { nombre: 'Belotero Revive', meta: 0, disponibles: 0 },
   },
 };

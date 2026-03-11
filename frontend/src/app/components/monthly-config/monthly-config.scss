@@ -1,0 +1,23 @@
+.info-card {
+  background: var(--p-surface-100);
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  text-align: center;
+
+  .info-label {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--p-text-muted-color);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+  }
+
+  .info-value {
+    display: block;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--p-text-color);
+  }
+}

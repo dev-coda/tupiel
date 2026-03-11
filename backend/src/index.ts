@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import healthRouter from './routes/health';
+import authRouter from './routes/auth';
 import schemaRouter from './routes/schema';
 import rentabilidadRouter from './routes/rentabilidad';
 import estimadaRouter from './routes/rentabilidad-estimada';
@@ -9,8 +10,12 @@ import controladorRouter from './routes/controlador';
 import dashboardRouter from './routes/dashboard';
 import dbToggleRouter from './routes/db-toggle';
 import diasNoLaboralesRouter from './routes/dias-no-laborales';
+import monthlyConfigRouter from './routes/monthly-config';
+import savedReportsRouter from './routes/saved-reports';
 import { testConnection } from './config/database';
 import { initAppDatabase } from './config/app-database';
+import { startDailyReportsJob } from './jobs/daily-reports';
+import { requireAuth } from './middleware/auth';
 
 dotenv.config();
 
@@ -27,40 +32,49 @@ app.use((req, _res, next) => {
   next();
 });
 
-// Routes
+// ─── Public routes (no auth required) ───
 app.get('/', (_req, res) => {
   res.json({ message: 'TuPiel Reporting API', version: '1.0.0' });
 });
 
 app.use('/api/health', healthRouter);
-app.use('/api/schema', schemaRouter);
-app.use('/api/reports/rentabilidad', rentabilidadRouter);
-app.use('/api/reports/rentabilidad-estimada', estimadaRouter);
-app.use('/api/reports/controlador', controladorRouter);
-app.use('/api/dashboard', dashboardRouter);
-app.use('/api/db-toggle', dbToggleRouter);
-app.use('/api/dias-no-laborales', diasNoLaboralesRouter);
+app.use('/api/auth', authRouter);
+
+// ─── Protected routes (auth required) ───
+app.use('/api/schema', requireAuth, schemaRouter);
+app.use('/api/reports/rentabilidad', requireAuth, rentabilidadRouter);
+app.use('/api/reports/rentabilidad-estimada', requireAuth, estimadaRouter);
+app.use('/api/reports/controlador', requireAuth, controladorRouter);
+app.use('/api/dashboard', requireAuth, dashboardRouter);
+app.use('/api/db-toggle', requireAuth, dbToggleRouter);
+app.use('/api/dias-no-laborales', requireAuth, diasNoLaboralesRouter);
+app.use('/api/monthly-config', requireAuth, monthlyConfigRouter);
+app.use('/api/saved-reports', requireAuth, savedReportsRouter);
 
 // Start server
 async function start() {
+  // Test production database connection (read-only, used for all reports)
   const dbOk = await testConnection();
   if (!dbOk) {
-    console.warn('WARNING: Database connection failed. Server starting anyway.');
+    console.warn('⚠️  WARNING: Production database connection failed. Server starting anyway.');
+    console.warn('   Reports will fail until the database connection is restored.');
+  } else {
+    console.log('✅ Connected to PRODUCTION database (read-only)');
   }
   
-  // Initialize app database (for local CRUD operations)
-  try {
-    await initAppDatabase();
-  } catch (err) {
-    console.warn('WARNING: App database initialization failed:', err);
-    console.warn('CRUD features may not work. Make sure local MySQL is running.');
-  }
+  // Initialize app database (local read-write, for application data)
+  // This creates tables for: dias_no_laborales, monthly_configs, saved_reports, etc.
+  // Errors are logged but don't prevent server startup
+  await initAppDatabase();
 
-      app.listen(PORT, '0.0.0.0', () => {
-        console.log(`Server running on http://0.0.0.0:${PORT}`);
-        console.log(`Health check: http://0.0.0.0:${PORT}/api/health`);
-        console.log(`Schema endpoint: http://0.0.0.0:${PORT}/api/schema`);
-      });
+  // Start daily reports job (runs at 11pm)
+  startDailyReportsJob();
+
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running on http://0.0.0.0:${PORT}`);
+    console.log(`Health check: http://0.0.0.0:${PORT}/api/health`);
+    console.log(`Schema endpoint: http://0.0.0.0:${PORT}/api/schema`);
+  });
 }
 
 start();

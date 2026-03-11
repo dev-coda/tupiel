@@ -14,7 +14,7 @@
         [(ngModel)]="reportType"
         optionLabel="label"
         optionValue="value"
-        [style]="{ width: '260px' }"
+        styleClass="w-full"
         (onChange)="onReportTypeChange()"
       />
     </div>
@@ -25,7 +25,8 @@
         [(ngModel)]="dateFrom"
         dateFormat="yy-mm-dd"
         [showIcon]="true"
-        [style]="{ width: '180px' }"
+        styleClass="w-full"
+        appendTo="body"
       />
     </div>
     <div class="control-group">
@@ -35,7 +36,8 @@
         [(ngModel)]="dateTo"
         dateFormat="yy-mm-dd"
         [showIcon]="true"
-        [style]="{ width: '180px' }"
+        styleClass="w-full"
+        appendTo="body"
       />
     </div>
     <div class="control-actions">
@@ -115,6 +117,7 @@
   <p-table
     [value]="reportRows()"
     [scrollable]="true"
+    [tableStyle]="{'min-width': '60rem'}"
     scrollHeight="600px"
     [paginator]="true"
     [rows]="25"

@@ -42,6 +42,14 @@ export interface ProductMetrics {
   vendidos: number;
   faltan: number;
   pctCumplimiento: number;
+  ventaTotal: number;  // Total sales value in $
+}
+
+export interface ServiceSubcategoryMetrics {
+  subCategoria: string;
+  atenciones: number;
+  venta: number;
+  pctDelTotal: number;
 }
 
 export interface StrategyMetrics {
@@ -71,7 +79,9 @@ export interface DashboardData {
   dailyMetrics: DailyMetrics[];
   weeklySummaries: WeeklySummary[];
   products: ProductMetrics[];
+  servicesBySubcategory: ServiceSubcategoryMetrics[];
 
+  filterPagoSi: boolean;
   totalRegistrosRent: number;
   totalRegistrosEst: number;
   totalVlrRent: number;

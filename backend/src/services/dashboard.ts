@@ -13,6 +13,8 @@ import {
   ProductTarget,
 } from '../config/controlador-config';
 import { calculateWorkingDays, calculateWorkingDaysFallback } from './working-days';
+import { getMonthlyConfig } from './monthly-config';
+import { getProductsFromDB } from './employees-products';
 
 // ─── Helpers ───────────────────────────────────────────────
 
@@ -98,6 +100,14 @@ export interface ProductMetrics {
   vendidos: number;
   faltan: number;
   pctCumplimiento: number;
+  ventaTotal: number;  // Total sales value in $
+}
+
+export interface ServiceSubcategoryMetrics {
+  subCategoria: string;
+  atenciones: number;
+  venta: number;
+  pctDelTotal: number;
 }
 
 export interface StrategyMetrics {
@@ -127,8 +137,9 @@ export interface DashboardData {
   dailyMetrics: DailyMetrics[];
   weeklySummaries: WeeklySummary[];
   products: ProductMetrics[];
+  servicesBySubcategory: ServiceSubcategoryMetrics[];
 
-  // Raw totals for summary cards
+  filterPagoSi: boolean;
   totalRegistrosRent: number;
   totalRegistrosEst: number;
   totalVlrRent: number;
@@ -141,36 +152,52 @@ export interface DashboardData {
 export async function generateDashboardData(
   dateFrom: string,
   dateTo: string,
-  config: Partial<ControladorConfig> = {}
+  config: Partial<ControladorConfig> = {},
+  filterPagoSi: boolean = true
 ): Promise<DashboardData> {
-  const cfg: ControladorConfig = { ...DEFAULT_CONFIG, ...config };
+  // Extract year/month from dateFrom
+  const dateFromObj = new Date(dateFrom + 'T00:00:00');
+  const year = dateFromObj.getFullYear();
+  const month = dateFromObj.getMonth() + 1;
 
-  // Calculate working days dynamically from database
+  // Load config from database (with fallback to defaults)
+  let cfg: ControladorConfig;
   try {
-    const workingDays = await calculateWorkingDays(dateFrom, dateTo);
-    cfg.diasHabilesMes = workingDays;
-    console.log(`Calculated ${workingDays} working days from ${dateFrom} to ${dateTo}`);
+    cfg = await getMonthlyConfig(year, month, dateFrom, dateTo);
+    console.log(`✅ Loaded monthly config from database for ${year}-${month}`);
   } catch (err) {
-    console.warn('Failed to calculate working days from database, using fallback:', err);
-    cfg.diasHabilesMes = calculateWorkingDaysFallback(dateFrom, dateTo);
-  }
-
-  // Auto-compute diasEjecutados
-  if (cfg.diasEjecutados === 0) {
-    const today = new Date();
-    const monthStart = new Date(dateFrom + 'T00:00:00');
-    const diffDays = Math.floor(
-      (today.getTime() - monthStart.getTime()) / 86_400_000
-    );
-    // Calculate working days executed so far
+    console.warn('Failed to load monthly config from database, using defaults:', err);
+    cfg = { ...DEFAULT_CONFIG };
+    
+    // Still calculate working days and dias ejecutados
     try {
-      const todayStr = today.toISOString().substring(0, 10);
-      const workingDaysExecuted = await calculateWorkingDays(dateFrom, todayStr);
+      const workingDays = await calculateWorkingDays(dateFrom, dateTo);
+      if (workingDays <= 0) {
+        throw new Error(`Invalid working days calculation: ${workingDays}`);
+      }
+      cfg.diasHabilesMes = workingDays;
+    } catch (err2) {
+      cfg.diasHabilesMes = calculateWorkingDaysFallback(dateFrom, dateTo);
+    }
+
+    // Auto-calculate dias ejecutados as past business days
+    const today = new Date();
+    const monthStart = new Date(year, month - 1, 1);
+    const todayStr = today.toISOString().substring(0, 10);
+    const monthStartStr = `${year}-${String(month).padStart(2, '0')}-01`;
+    
+    try {
+      const endDate = today < new Date(dateTo + 'T00:00:00') ? todayStr : dateTo;
+      const workingDaysExecuted = await calculateWorkingDays(monthStartStr, endDate);
       cfg.diasEjecutados = Math.max(1, Math.min(workingDaysExecuted, cfg.diasHabilesMes));
-    } catch (err) {
+    } catch (err2) {
+      const diffDays = Math.floor((today.getTime() - monthStart.getTime()) / 86_400_000);
       cfg.diasEjecutados = Math.max(1, Math.min(diffDays, cfg.diasHabilesMes));
     }
   }
+
+  // Override with any provided config values
+  cfg = { ...cfg, ...config };
 
   console.log('Dashboard: fetching data…');
   const rentReport = await generateRentabilidad(dateFrom, dateTo, {
@@ -179,7 +206,9 @@ export async function generateDashboardData(
   const estReport = await generateEstimada(dateFrom, dateTo);
   console.log(`  → ${rentReport.rows.length} rent, ${estReport.rows.length} est`);
 
-  const rentRows = rentReport.rows;
+  const rentRows = filterPagoSi
+    ? rentReport.rows.filter((r) => r.pagado_este_mes === 'SI')
+    : rentReport.rows;
   const estRows = estReport.rows;
 
   // ── Personnel metrics ──
@@ -261,7 +290,12 @@ export async function generateDashboardData(
   ];
 
   // ── Daily metrics ──
+  // Daily goal is calculated using working days (not calendar days)
+  // This ensures the goal adjusts automatically when non-working days are added/removed
   const dates = dateRange(dateFrom, dateTo);
+  if (cfg.diasHabilesMes <= 0) {
+    throw new Error('Working days (diasHabilesMes) must be calculated before computing daily metrics');
+  }
   const metaDia = cfg.metaGlobal / cfg.diasHabilesMes;
 
   const dailyMetrics: DailyMetrics[] = dates.map((d) => {
@@ -307,27 +341,62 @@ export async function generateDashboardData(
     });
 
   // ── Product metrics ──
-  const productEntries: { label: string; target: ProductTarget }[] = [
-    { label: 'Botox', target: cfg.botox },
-    { label: 'Radiesse', target: cfg.radiesse },
-    { label: 'Harmonyca', target: cfg.harmonyca },
-    { label: 'Skinvive', target: cfg.skinvive },
-    { label: 'Belotero Balance', target: cfg.belotero.balance },
-    { label: 'Belotero Intense', target: cfg.belotero.intense },
-    { label: 'Belotero Volume', target: cfg.belotero.volume },
-    { label: 'Belotero Revive', target: cfg.belotero.revive },
+  // Load actual vendidos (units used) and sales values from production DB
+  let productsFromDB: { key: string; vendidos: number; ventaTotal: number }[] = [];
+  try {
+    productsFromDB = await getProductsFromDB(dateFrom, dateTo);
+  } catch (err) {
+    console.warn('Failed to load product usage from production DB:', err);
+  }
+  const vendidosMap = new Map<string, number>();
+  const ventaTotalMap = new Map<string, number>();
+  for (const p of productsFromDB) {
+    vendidosMap.set(p.key, p.vendidos);
+    ventaTotalMap.set(p.key, p.ventaTotal);
+  }
+
+  const productEntries: { label: string; key: string; target: ProductTarget }[] = [
+    { label: 'Botox', key: 'botox', target: cfg.botox },
+    { label: 'Radiesse', key: 'radiesse', target: cfg.radiesse },
+    { label: 'Harmonyca', key: 'harmonyca', target: cfg.harmonyca },
+    { label: 'Skinvive', key: 'skinvive', target: cfg.skinvive },
+    { label: 'Belotero Balance', key: 'belotero.balance', target: cfg.belotero.balance },
+    { label: 'Belotero Intense', key: 'belotero.intense', target: cfg.belotero.intense },
+    { label: 'Belotero Volume', key: 'belotero.volume', target: cfg.belotero.volume },
+    { label: 'Belotero Revive', key: 'belotero.revive', target: cfg.belotero.revive },
   ];
 
   const products: ProductMetrics[] = productEntries.map((p) => {
-    const vendidos = Math.max(0, p.target.meta - p.target.disponibles);
+    const vendidos = vendidosMap.get(p.key) ?? 0;
+    const ventaTotal = ventaTotalMap.get(p.key) ?? 0;
     return {
       nombre: p.label,
       meta: p.target.meta,
       vendidos,
-      faltan: p.target.meta - vendidos,
+      faltan: Math.max(0, p.target.meta - vendidos),
       pctCumplimiento: p.target.meta > 0 ? vendidos / p.target.meta : 0,
+      ventaTotal,
     };
   });
+
+  // ── Services by subcategory ──
+  const subCatMap = new Map<string, { venta: number; atenciones: number }>();
+  for (const r of rentRows) {
+    const key = r.sub_categoria || '(Sin subcategoría)';
+    const existing = subCatMap.get(key) || { venta: 0, atenciones: 0 };
+    existing.venta += r.vlr;
+    existing.atenciones += 1;
+    subCatMap.set(key, existing);
+  }
+  const totalVentaServicios = rentRows.reduce((s, r) => s + r.vlr, 0);
+  const servicesBySubcategory: ServiceSubcategoryMetrics[] = Array.from(subCatMap.entries())
+    .map(([subCategoria, data]) => ({
+      subCategoria,
+      atenciones: data.atenciones,
+      venta: data.venta,
+      pctDelTotal: totalVentaServicios > 0 ? data.venta / totalVentaServicios : 0,
+    }))
+    .sort((a, b) => b.venta - a.venta);
 
   // ── Strategy ──
   const totalFacturado = dermaVenta + medEstVenta + loungeVenta + cfg.facturadoProductos;
@@ -364,10 +433,12 @@ export async function generateDashboardData(
     dailyMetrics,
     weeklySummaries,
     products,
+    servicesBySubcategory,
+    filterPagoSi,
     totalRegistrosRent: rentRows.length,
     totalRegistrosEst: estRows.length,
-    totalVlrRent: rentReport.totals.vlr,
+    totalVlrRent: rentRows.reduce((s, r) => s + r.vlr, 0),
     totalVlrEst: estReport.totals?.vlr ?? 0,
-    totalRentabilidad: rentReport.totals.rentabilidad_total,
+    totalRentabilidad: rentRows.reduce((s, r) => s + r.rentabilidad_total, 0),
   };
 }
