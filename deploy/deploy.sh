@@ -153,8 +153,10 @@ docker compose down --remove-orphans 2>/dev/null || true
 docker pull mysql:8.0
 docker pull nginx:alpine
 
-# Start all services (--no-build because images are pre-built and transferred)
-docker compose --env-file .env up -d --no-build
+# Start all services (--no-build because images are pre-built and transferred).
+# --force-recreate: same tag (e.g. tupiel-frontend:latest) can point to a new image after docker load;
+# without this, Compose may keep running the old container and the UI never updates.
+docker compose --env-file .env up -d --no-build --force-recreate --remove-orphans
 
 echo ""
 echo "Container status:"
