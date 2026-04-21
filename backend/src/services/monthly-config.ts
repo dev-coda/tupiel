@@ -13,6 +13,16 @@ import { appQuery } from '../config/app-database';
 import { ControladorConfig, PersonBudget, ProductTarget } from '../config/controlador-config';
 import { calculateWorkingDays } from './working-days';
 import { getActiveEmployees, getProductsFromDB, ProductFromDB } from './employees-products';
+import { toDateString } from '../utils/dates';
+
+async function getHiddenEmployeeSet(): Promise<Set<string>> {
+  try {
+    const result = await appQuery('SELECT nombre, categoria FROM hidden_employees');
+    return new Set(result.rows.map(r => `${r.categoria}:${r.nombre}`));
+  } catch {
+    return new Set();
+  }
+}
 
 export interface MonthlyConfigRecord {
   id: number;
@@ -21,7 +31,6 @@ export interface MonthlyConfigRecord {
   version: number;
   meta_global: number;
   meta_productos: number;
-  facturado_productos: number;
   created_at: string;
   updated_at: string;
 }
@@ -152,6 +161,14 @@ export async function getMonthlyConfig(
     }
   }
 
+  // 6b. Filter out hidden employees
+  const hiddenSet = await getHiddenEmployeeSet();
+  const filterHidden = (list: PersonBudget[], cat: string) =>
+    list.filter(e => !hiddenSet.has(`${cat}:${e.nombre}`));
+  const filteredDermatologia = filterHidden(dermatologia, 'DERMATOLOGÍA');
+  const filteredMedEstetica = filterHidden(medEstetica, 'MED ESTÉTICA');
+  const filteredLounge = filterHidden(lounge, 'TP LOUNGE');
+
   // 7. Build product targets — stock and vendidos from production DB, meta from saved config
   const buildProductTarget = (key: string, label: string): ProductTarget => {
     const dbProduct = productsFromDB.find(p => p.key === key);
@@ -168,10 +185,9 @@ export async function getMonthlyConfig(
     diasEjecutados: 0,
     metaGlobal: configRecord ? Number(configRecord.meta_global) : 0,
     metaProductos: configRecord ? Number(configRecord.meta_productos) : 0,
-    facturadoProductos: configRecord ? Number(configRecord.facturado_productos) : 0,
-    dermatologia,
-    medEstetica,
-    lounge,
+    dermatologia: filteredDermatologia,
+    medEstetica: filteredMedEstetica,
+    lounge: filteredLounge,
     botox: buildProductTarget('botox', 'Botox'),
     radiesse: buildProductTarget('radiesse', 'Radiesse'),
     harmonyca: buildProductTarget('harmonyca', 'Harmonyca'),
@@ -213,7 +229,7 @@ export async function getMonthlyConfig(
 
   try {
     const endDate = today < new Date(dateTo + 'T00:00:00')
-      ? today.toISOString().substring(0, 10)
+      ? toDateString(today)
       : dateTo;
     const workingDaysExecuted = await calculateWorkingDays(monthStartStr, endDate);
     config.diasEjecutados = Math.max(1, Math.min(workingDaysExecuted, config.diasHabilesMes));
@@ -251,15 +267,14 @@ export async function saveMonthlyConfig(
 
     const [result] = await conn.execute(
       `INSERT INTO monthly_configs 
-       (year, month, version, meta_global, meta_productos, facturado_productos)
-       VALUES (?, ?, ?, ?, ?, ?)`,
+       (year, month, version, meta_global, meta_productos)
+       VALUES (?, ?, ?, ?, ?)`,
       [
         year,
         month,
         newVersion,
         config.metaGlobal || 0,
         config.metaProductos || 0,
-        config.facturadoProductos || 0,
       ]
     );
 

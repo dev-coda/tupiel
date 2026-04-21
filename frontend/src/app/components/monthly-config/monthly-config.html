@@ -110,22 +110,24 @@
         />
       </div>
       <div class="col-12 md:col-4">
-        <label class="block mb-2 font-semibold">Facturado Productos ($)</label>
-        <p-inputNumber
-          [(ngModel)]="facturadoProductos"
-          mode="decimal"
-          [min]="0"
-          [maxFractionDigits]="0"
-          [style]="{ width: '100%' }"
-          prefix="$ "
-          locale="es-CO"
-        />
       </div>
     </div>
   </p-card>
 
+  <!-- Hidden employees button -->
+  <div class="mt-3 flex justify-content-end">
+    <p-button
+      label="Empleados ocultos"
+      icon="pi pi-eye-slash"
+      [outlined]="true"
+      severity="secondary"
+      size="small"
+      (onClick)="openHiddenDialog()"
+    />
+  </div>
+
   <!-- Dermatología -->
-  <p-card class="mt-3">
+  <p-card class="mt-2">
     <ng-template pTemplate="title">
       <div class="flex align-items-center gap-2">
         <span>👩‍⚕️ Presupuestos — Dermatología</span>
@@ -138,8 +140,9 @@
       <p-table [value]="dermatologia" [paginator]="false" [scrollable]="true" [tableStyle]="{'min-width': '30rem'}" styleClass="p-datatable-sm">
         <ng-template pTemplate="header">
           <tr>
-            <th style="width: 60%">Empleado</th>
+            <th style="width: 50%">Empleado</th>
             <th>Presupuesto ($)</th>
+            <th style="width: 60px"></th>
           </tr>
         </ng-template>
         <ng-template pTemplate="body" let-emp>
@@ -156,12 +159,24 @@
                 locale="es-CO"
               />
             </td>
+            <td class="text-center">
+              <p-button
+                icon="pi pi-eye-slash"
+                [rounded]="true"
+                [text]="true"
+                severity="secondary"
+                size="small"
+                pTooltip="Ocultar empleado"
+                (onClick)="hideEmployee(emp.nombre, 'DERMATOLOGÍA')"
+              />
+            </td>
           </tr>
         </ng-template>
         <ng-template pTemplate="footer">
           <tr>
             <td class="font-bold">Total</td>
             <td class="font-bold">{{ formatCurrency(getTotalPresupuesto(dermatologia)) }}</td>
+            <td></td>
           </tr>
         </ng-template>
       </p-table>
@@ -182,8 +197,9 @@
       <p-table [value]="medEstetica" [paginator]="false" [scrollable]="true" [tableStyle]="{'min-width': '30rem'}" styleClass="p-datatable-sm">
         <ng-template pTemplate="header">
           <tr>
-            <th style="width: 60%">Empleado</th>
+            <th style="width: 50%">Empleado</th>
             <th>Presupuesto ($)</th>
+            <th style="width: 60px"></th>
           </tr>
         </ng-template>
         <ng-template pTemplate="body" let-emp>
@@ -200,12 +216,24 @@
                 locale="es-CO"
               />
             </td>
+            <td class="text-center">
+              <p-button
+                icon="pi pi-eye-slash"
+                [rounded]="true"
+                [text]="true"
+                severity="secondary"
+                size="small"
+                pTooltip="Ocultar empleado"
+                (onClick)="hideEmployee(emp.nombre, 'MED ESTÉTICA')"
+              />
+            </td>
           </tr>
         </ng-template>
         <ng-template pTemplate="footer">
           <tr>
             <td class="font-bold">Total</td>
             <td class="font-bold">{{ formatCurrency(getTotalPresupuesto(medEstetica)) }}</td>
+            <td></td>
           </tr>
         </ng-template>
       </p-table>
@@ -226,8 +254,9 @@
       <p-table [value]="lounge" [paginator]="false" [scrollable]="true" [tableStyle]="{'min-width': '30rem'}" styleClass="p-datatable-sm">
         <ng-template pTemplate="header">
           <tr>
-            <th style="width: 60%">Empleado</th>
+            <th style="width: 50%">Empleado</th>
             <th>Presupuesto ($)</th>
+            <th style="width: 60px"></th>
           </tr>
         </ng-template>
         <ng-template pTemplate="body" let-emp>
@@ -244,12 +273,24 @@
                 locale="es-CO"
               />
             </td>
+            <td class="text-center">
+              <p-button
+                icon="pi pi-eye-slash"
+                [rounded]="true"
+                [text]="true"
+                severity="secondary"
+                size="small"
+                pTooltip="Ocultar empleado"
+                (onClick)="hideEmployee(emp.nombre, 'TP LOUNGE')"
+              />
+            </td>
           </tr>
         </ng-template>
         <ng-template pTemplate="footer">
           <tr>
             <td class="font-bold">Total</td>
             <td class="font-bold">{{ formatCurrency(getTotalPresupuesto(lounge)) }}</td>
+            <td></td>
           </tr>
         </ng-template>
       </p-table>
@@ -311,4 +352,46 @@
   </div>
 }
 
+<!-- Hidden employees dialog -->
+<p-dialog
+  header="Empleados ocultos"
+  [visible]="showHiddenDialog()"
+  (visibleChange)="showHiddenDialog.set($event)"
+  [modal]="true"
+  [style]="{ width: '500px' }"
+  [closable]="true"
+>
+  @if (hiddenEmployees.length === 0) {
+    <p class="text-gray-500 text-center">No hay empleados ocultos.</p>
+  } @else {
+    <p-table [value]="hiddenEmployees" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Empleado</th>
+          <th>Categoría</th>
+          <th style="width: 80px"></th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-emp>
+        <tr>
+          <td>{{ emp.nombre }}</td>
+          <td><p-tag [value]="emp.categoria" severity="secondary" /></td>
+          <td class="text-center">
+            <p-button
+              icon="pi pi-eye"
+              [rounded]="true"
+              [text]="true"
+              severity="success"
+              size="small"
+              pTooltip="Restaurar"
+              (onClick)="unhideEmployee(emp)"
+            />
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  }
+</p-dialog>
+
+<p-confirmDialog />
 <p-toast />

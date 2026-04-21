@@ -1,0 +1,229 @@
+<div class="ip-act">
+  <div class="ip-act__head">
+    <div class="ip-act__title">Tareas</div>
+    <div class="ip-act__head-btns">
+      @if (ganados().length > 0) {
+        <button type="button" class="ip-act__btn-win" (click)="showInforme.update((v) => !v)">
+          🎉 {{ ganados().length }} ganado{{ ganados().length !== 1 ? 's' : '' }}
+        </button>
+      }
+      @if (st.user()?.rol === 'admin') {
+        <button type="button" class="ip-act__btn-new" (click)="modalTarea.set({})">+ Nueva Tarea</button>
+      }
+    </div>
+  </div>
+
+  <div class="ip-act__stats">
+    @for (
+      s of [
+        { label: 'Nuevas', count: conteos().nueva, color: '#d63031', bg: 'rgba(214,48,49,.07)', icon: '⚡', key: 'tareas_nueva' },
+        { label: 'Pendientes', count: conteos().pendiente, color: '#e17055', bg: 'rgba(225,112,85,.07)', icon: '⏳', key: 'tareas_pendiente' },
+        { label: 'Completadas', count: conteos().completado, color: '#00b894', bg: 'rgba(0,184,148,.07)', icon: '✓', key: 'tareas_completado' },
+        { label: 'Ganados', count: conteos().ganado, color: '#6c63ff', bg: 'rgba(108,99,255,.07)', icon: '🎉', key: 'tareas_ganado' },
+      ];
+      track s.label
+    ) {
+      <div
+        class="ip-act__stat"
+        [style.border-color]="s.color + '22'"
+        [style.background]="s.bg"
+        (click)="toggleStatFilter(s.label)"
+      >
+        <div class="ip-act__stat-l" [style.color]="s.color">{{ s.icon }} {{ s.label }}</div>
+        <div class="ip-act__stat-n" [style.color]="s.color">{{ s.count }}</div>
+        <app-ip-goal-progress [metricKey]="s.key" [actual]="s.count" format="int" />
+      </div>
+    }
+  </div>
+
+  <div class="ip-act__filtros">
+    @for (
+      f of [
+        { key: 'todos', label: 'Todas', count: conteos().todos },
+        { key: 'nueva', label: '⚡ Nuevas', count: conteos().nueva },
+        { key: 'pendiente', label: 'Pendientes', count: conteos().pendiente },
+        { key: 'completado', label: 'Completadas', count: conteos().completado },
+        { key: 'ganado', label: 'Ganados 🎉', count: conteos().ganado },
+      ];
+      track f.key
+    ) {
+      <button
+        type="button"
+        class="ip-act__filt"
+        [class.ip-act__filt--on]="filtro() === f.key"
+        (click)="filtro.set(f.key)"
+      >
+        {{ f.label }}
+        <span class="ip-act__filt-n">{{ f.count }}</span>
+      </button>
+    }
+  </div>
+
+  @if (showInforme() && ganados().length > 0) {
+    <div class="ip-act__informe">
+      <div class="ip-act__informe-head">
+        <div class="ip-act__informe-t">🎉 Informe de Pacientes Ganados · {{ ganados().length }}</div>
+        <button type="button" class="ip-act__informe-x" (click)="showInforme.set(false)">×</button>
+      </div>
+      <div class="ip-act__informe-table-wrap">
+        <table class="ip-act__informe-table">
+          <thead>
+            <tr>
+              @for (h of ['Paciente', 'Celular', 'Ticket', 'Actividad', 'C1', 'C2', 'C3']; track h) {
+                <th>{{ h }}</th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (t of ganados(); track t.id) {
+              <tr>
+                <td class="ip-act__inf-pac">{{ t.pacNombre }}</td>
+                <td>{{ t.pacCelular || '—' }}</td>
+                <td>
+                  @if (t.fichaTicket) {
+                    <span class="ip-act__inf-pill" [style.background]="ticketColor[t.fichaTicket] + '22'" [style.color]="ticketColor[t.fichaTicket]">{{ ticketLabel[t.fichaTicket] }}</span>
+                  }
+                </td>
+                <td>
+                  @if (t.fichaActividad) {
+                    <span class="ip-act__inf-pill" [style.background]="activColor[t.fichaActividad] + '22'" [style.color]="activColor[t.fichaActividad]">{{ activLabel[t.fichaActividad] }}</span>
+                  }
+                </td>
+                <td>{{ fmtContacto(t, 1) }}</td>
+                <td>{{ fmtContacto(t, 2) }}</td>
+                <td>{{ fmtContacto(t, 3) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  }
+
+  <div class="ip-act__list">
+    @if (tareasPorPaciente().length === 0) {
+      <div class="ip-act__sin">Sin tareas</div>
+    } @else {
+      @for (g of tareasPorPaciente(); track g.key) {
+        <details class="ip-act__acc">
+          <summary class="ip-act__acc-sum">
+            <span class="ip-act__acc-n">{{ g.nombre }}</span>
+            <span class="ip-act__acc-doc">{{ g.doc }}</span>
+            <span class="ip-act__acc-nn">{{ g.tareas.length }} tarea{{ g.tareas.length !== 1 ? 's' : '' }}</span>
+          </summary>
+          <div class="ip-act__acc-body">
+      @for (t of g.tareas; track t.id) {
+        @let tipoInfo = tipoMap[t.tipo];
+        @let tipoIcon = tipoInfo?.icon || tipoLegacy[t.tipo] || '📌';
+        @let estado = estadoTarea[t.estado] || estadoTarea['pendiente'];
+        @let esGanado = t.estado === 'ganado';
+        @let esNueva = t.estado === 'nueva';
+        @let hasGestion = !!(t.fichaOrigen || t.pacCelular || t.pacValor || t.fichaTicket || t.fichaActividad);
+        <div
+          class="ip-act__card"
+          [class.ip-act__card--nueva]="esNueva"
+          [class.ip-act__card--ganado]="esGanado"
+          [class.ip-act__card--done]="t.estado === 'completado'"
+          [style.border-left-color]="estado.color"
+        >
+          <div class="ip-act__card-inner">
+            <div class="ip-act__left">
+              <div class="ip-act__row1">
+                <span>{{ esNueva ? '⚡' : tipoIcon }}</span>
+                <span class="ip-act__pn" [class.ip-act__pn--strike]="t.estado === 'completado'">{{ t.pacNombre }}</span>
+                <span class="ip-act__est" [style.background]="estado.bg" [style.color]="estado.color">{{ estado.label }}</span>
+                @if (!esNueva && tipoInfo) {
+                  <span class="ip-act__tipo">{{ tipoInfo.icon }} {{ tipoInfo.label }}</span>
+                }
+              </div>
+              @if (hasGestion) {
+                <div class="ip-act__gest">
+                  @if (t.fichaOrigen) {
+                    <div>
+                      <div class="ip-act__gl">Origen</div>
+                      <span class="ip-act__origen">📍 {{ t.fichaOrigen }}</span>
+                    </div>
+                  }
+                  @if (t.pacCelular) {
+                    <div>
+                      <div class="ip-act__gl">Celular</div>
+                      <span class="ip-act__cel">{{ t.pacCelular }}</span>
+                    </div>
+                  }
+                  @if (t.pacValor > 0) {
+                    <div>
+                      <div class="ip-act__gl">Valor Total</div>
+                      <span class="ip-act__val">{{ fM(t.pacValor) }}</span>
+                    </div>
+                  }
+                  @if (t.fichaTicket) {
+                    <div>
+                      <div class="ip-act__gl">Ticket</div>
+                      <span class="ip-act__pill" [style.background]="ticketColor[t.fichaTicket] + '22'" [style.color]="ticketColor[t.fichaTicket]">{{ ticketLabel[t.fichaTicket] }}</span>
+                    </div>
+                  }
+                  @if (t.fichaActividad) {
+                    <div>
+                      <div class="ip-act__gl">Actividad</div>
+                      <span class="ip-act__pill" [style.background]="activColor[t.fichaActividad] + '22'" [style.color]="activColor[t.fichaActividad]">{{ activLabel[t.fichaActividad] }}</span>
+                    </div>
+                  }
+                </div>
+              }
+              @if (t.descripcion) {
+                <div class="ip-act__desc">{{ t.descripcion }}</div>
+              } @else if (esNueva) {
+                <div class="ip-act__pend">Sin descripción — pendiente de diligenciar</div>
+              }
+              @if (hasContactos(t)) {
+                <div class="ip-act__contacts">
+                  @for (n of [1, 2, 3]; track n) {
+                    @if (fmtContactoN(t, n) !== '—') {
+                      <span class="ip-act__cchip">
+                        <span class="ip-act__cn">C{{ n }}</span>
+                        {{ fmtContactoN(t, n) }}
+                      </span>
+                    }
+                  }
+                </div>
+              }
+            </div>
+            <div class="ip-act__actions">
+              @if (esNueva) {
+                <button type="button" class="ip-act__a1" (click)="$event.stopPropagation(); modalTarea.set(t)">⚡ Diligenciar</button>
+              } @else {
+                @if (!esGanado) {
+                  <button
+                    type="button"
+                    class="ip-act__a2"
+                    [class.ip-act__a2--reopen]="t.estado === 'completado'"
+                    (click)="toggleEstado($event, t.id)"
+                  >
+                    {{ t.estado === 'completado' ? '↩ Reabrir' : '✓ Listo' }}
+                  </button>
+                }
+                <button type="button" class="ip-act__a3" (click)="$event.stopPropagation(); modalTarea.set(t)">
+                  {{ esGanado ? '👁 Ver' : '✏ Editar' }}
+                </button>
+              }
+              @if (t.pacDoc && pacIndex()[t.pacDoc]) {
+                <button type="button" class="ip-act__hv" (click)="$event.stopPropagation(); hojaVidaDoc.set(t.pacDoc)">👤 HV</button>
+              }
+            </div>
+          </div>
+        </div>
+      }
+          </div>
+        </details>
+      }
+    }
+  </div>
+</div>
+
+@if (modalTarea(); as mt) {
+  <app-ip-modal-tarea [tarea]="mt" (close)="modalTarea.set(null)" (save)="guardarTarea($event)" />
+}
+
+@if (hojaVidaDoc(); as doc) {
+  <app-ip-modal-hoja-vida [pacDoc]="doc" (close)="hojaVidaDoc.set(null)" />
+}

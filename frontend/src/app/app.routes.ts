@@ -71,6 +71,14 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'inteligencia-pacientes',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./components/inteligencia-pacientes/inteligencia-pacientes').then(
+        (m) => m.InteligenciaPacientes
+      ),
+  },
+  {
     path: '**',
     redirectTo: 'ppto',
   },

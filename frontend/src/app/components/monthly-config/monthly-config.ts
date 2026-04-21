@@ -9,8 +9,11 @@ import { MessageModule } from 'primeng/message';
 import { ToastModule } from 'primeng/toast';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TagModule } from 'primeng/tag';
-import { MessageService } from 'primeng/api';
-import { ApiService } from '../../services/api.service';
+import { DialogModule } from 'primeng/dialog';
+import { TooltipModule } from 'primeng/tooltip';
+import { MessageService, ConfirmationService } from 'primeng/api';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { ApiService, HiddenEmployee } from '../../services/api.service';
 
 interface PersonBudget {
   nombre: string;
@@ -34,7 +37,6 @@ interface MonthlyConfigResponse {
     diasEjecutados: number;
     metaGlobal: number;
     metaProductos: number;
-    facturadoProductos: number;
     dermatologia: PersonBudget[];
     medEstetica: PersonBudget[];
     lounge: PersonBudget[];
@@ -72,8 +74,11 @@ interface ProductRow {
     ToastModule,
     ProgressSpinnerModule,
     TagModule,
+    DialogModule,
+    ConfirmDialogModule,
+    TooltipModule,
   ],
-  providers: [MessageService],
+  providers: [MessageService, ConfirmationService],
   templateUrl: './monthly-config.html',
   styleUrl: './monthly-config.scss',
 })
@@ -96,7 +101,6 @@ export class MonthlyConfig implements OnInit {
   // Editable global values
   metaGlobal = 0;
   metaProductos = 0;
-  facturadoProductos = 0;
 
   // Employee lists (names from production DB, presupuesto editable)
   dermatologia: PersonBudget[] = [];
@@ -106,9 +110,14 @@ export class MonthlyConfig implements OnInit {
   // Product rows (meta editable, disponibles/vendidos from production DB)
   productRows: ProductRow[] = [];
 
+  // Hidden employees
+  hiddenEmployees: HiddenEmployee[] = [];
+  showHiddenDialog = signal(false);
+
   constructor(
     private api: ApiService,
-    private messageService: MessageService
+    private messageService: MessageService,
+    private confirmationService: ConfirmationService
   ) {}
 
   ngOnInit() {
@@ -149,7 +158,6 @@ export class MonthlyConfig implements OnInit {
 
     this.metaGlobal = config.metaGlobal;
     this.metaProductos = config.metaProductos;
-    this.facturadoProductos = config.facturadoProductos;
 
     // Employees — names come from production DB, presupuesto from saved config
     this.dermatologia = config.dermatologia.map(e => ({ ...e }));
@@ -182,7 +190,6 @@ export class MonthlyConfig implements OnInit {
     const configToSave = {
       metaGlobal: this.metaGlobal,
       metaProductos: this.metaProductos,
-      facturadoProductos: this.facturadoProductos,
       dermatologia: this.dermatologia,
       medEstetica: this.medEstetica,
       lounge: this.lounge,
@@ -235,5 +242,54 @@ export class MonthlyConfig implements OnInit {
 
   formatCurrency(value: number): string {
     return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(value);
+  }
+
+  hideEmployee(nombre: string, categoria: string) {
+    this.confirmationService.confirm({
+      message: `¿Ocultar a "${nombre}" de la configuración mensual?`,
+      header: 'Confirmar',
+      icon: 'pi pi-eye-slash',
+      acceptLabel: 'Ocultar',
+      rejectLabel: 'Cancelar',
+      accept: () => {
+        this.api.hideEmployee(nombre, categoria).subscribe({
+          next: () => {
+            this.messageService.add({ severity: 'success', summary: 'Empleado oculto', detail: nombre });
+            this.loadConfig();
+          },
+          error: () => {
+            this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo ocultar' });
+          },
+        });
+      },
+    });
+  }
+
+  openHiddenDialog() {
+    this.api.getHiddenEmployees().subscribe({
+      next: (res) => {
+        this.hiddenEmployees = res.data;
+        this.showHiddenDialog.set(true);
+      },
+      error: () => {
+        this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar empleados ocultos' });
+      },
+    });
+  }
+
+  unhideEmployee(emp: HiddenEmployee) {
+    this.api.unhideEmployee(emp.id).subscribe({
+      next: () => {
+        this.hiddenEmployees = this.hiddenEmployees.filter(e => e.id !== emp.id);
+        this.messageService.add({ severity: 'success', summary: 'Restaurado', detail: emp.nombre });
+        if (this.hiddenEmployees.length === 0) {
+          this.showHiddenDialog.set(false);
+        }
+        this.loadConfig();
+      },
+      error: () => {
+        this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo restaurar' });
+      },
+    });
   }
 }

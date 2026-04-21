@@ -17,11 +17,11 @@ RUN if [ -f pnpm-lock.yaml ]; then \
 # Copy source
 COPY . .
 
-# Build
+# Production bundle only (never use development env with localhost API URL)
 RUN if [ -f pnpm-lock.yaml ]; then \
-      pnpm build; \
+      pnpm run build:prod; \
     else \
-      npm run build; \
+      npm run build:prod; \
     fi
 
 # Production stage

@@ -1,0 +1,95 @@
+<div class="ip-rep">
+  <div class="ip-rep__head">
+    <div>
+      <h1 class="ip-rep__title">Informes y exportación</h1>
+      <p class="ip-rep__sub">
+        Descargue CSV (UTF-8) con el alcance del módulo Inteligencia: catálogo sincronizado con Medifony,
+        agenda, fichas de gestión y tareas comerciales.
+      </p>
+    </div>
+  </div>
+
+  @if (lastErr(); as err) {
+    <div class="ip-rep__err" role="alert">{{ err }}</div>
+  }
+
+  <div class="ip-rep__grid">
+    <div class="ip-rep__card">
+      <div class="ip-rep__card-ic">👥</div>
+      <div class="ip-rep__card-t">Pacientes</div>
+      <div class="ip-rep__card-d">Catálogo CRM (datos_json) — origen Medifony / Excel.</div>
+      <button
+        type="button"
+        class="ip-rep__btn"
+        [disabled]="busy() !== null"
+        (click)="download('pacientes')"
+      >
+        {{ busy() === 'pacientes' ? 'Generando…' : 'Descargar CSV' }}
+      </button>
+    </div>
+
+    <div class="ip-rep__card">
+      <div class="ip-rep__card-ic">📅</div>
+      <div class="ip-rep__card-t">Agenda</div>
+      <div class="ip-rep__card-d">Citas programadas con profesional, CUPS y valor.</div>
+      <button
+        type="button"
+        class="ip-rep__btn"
+        [disabled]="busy() !== null"
+        (click)="download('agenda')"
+      >
+        {{ busy() === 'agenda' ? 'Generando…' : 'Descargar CSV' }}
+      </button>
+    </div>
+
+    <div class="ip-rep__card">
+      <div class="ip-rep__card-ic">📋</div>
+      <div class="ip-rep__card-t">Fichas de gestión</div>
+      <div class="ip-rep__card-d">Estado comercial, ticket, actividad y notas por paciente.</div>
+      <button
+        type="button"
+        class="ip-rep__btn"
+        [disabled]="busy() !== null"
+        (click)="download('fichas')"
+      >
+        {{ busy() === 'fichas' ? 'Generando…' : 'Descargar CSV' }}
+      </button>
+    </div>
+
+    <div class="ip-rep__card">
+      <div class="ip-rep__card-ic">✅</div>
+      <div class="ip-rep__card-t">Tareas comerciales</div>
+      <div class="ip-rep__card-d">Seguimiento, contactos y estados (incl. asignación).</div>
+      <button
+        type="button"
+        class="ip-rep__btn"
+        [disabled]="busy() !== null"
+        (click)="download('tareas')"
+      >
+        {{ busy() === 'tareas' ? 'Generando…' : 'Descargar CSV' }}
+      </button>
+    </div>
+  </div>
+
+  <div class="ip-rep__full">
+    <div class="ip-rep__full-inner">
+      <div class="ip-rep__full-t">Exportación completa</div>
+      <div class="ip-rep__full-d">
+        Un solo archivo con secciones comentadas (# PACIENTES, # AGENDA, …). Útil para respaldo o análisis en
+        herramientas que aceptan CSV con líneas de comentario.
+      </div>
+      <button
+        type="button"
+        class="ip-rep__btn ip-rep__btn--primary"
+        [disabled]="busy() !== null"
+        (click)="download('all')"
+      >
+        {{ busy() === 'all' ? 'Generando…' : 'Descargar paquete completo' }}
+      </button>
+    </div>
+  </div>
+
+  <p class="ip-rep__note">
+    La gestión de usuarios y roles del módulo está en <strong>Usuarios</strong> (solo administradores).
+  </p>
+</div>

@@ -1,0 +1,71 @@
+<div
+  class="ip-mfs"
+  [class.ip-mfs--agenda]="context() === 'agenda'"
+  [attr.aria-label]="'Sincronización Medifony'"
+>
+  <div class="ip-mfs__head">
+    <span class="ip-mfs__title">Medifony</span>
+    <span class="ip-mfs__hint">
+      @if (context() === 'agenda') {
+        Paso 2: revise el día y especialistas; las citas vienen del mismo origen que Pacientes.
+      } @else {
+        Paso 1: sincronice el catálogo desde la misma BD que PPTO; luego use Tareas y Alertas.
+      }
+    </span>
+  </div>
+  <ol class="ip-mfs__steps">
+    <li>Sincronizar (rango o carga inicial)</li>
+    <li>Revisar pacientes / agenda</li>
+    <li>Crear fichas y tareas de seguimiento</li>
+  </ol>
+  <div class="ip-mfs__full">
+    <button type="button" class="ip-mfs__full-btn" [disabled]="syncing()" (click)="aplicarCargaInicialCompleta()">
+      Carga inicial — todos los pacientes (Medifony)
+    </button>
+    <span class="ip-mfs__full-hint">Usa rango 2010→hoy, historial completo y reemplaza catálogo CRM.</span>
+  </div>
+  <div class="ip-mfs__row">
+    <label class="ip-mfs__lbl">Desde</label>
+    <input class="ip-mfs__date" type="date" [ngModel]="syncFrom()" (ngModelChange)="syncFrom.set($event)" />
+    <span class="ip-mfs__sep">—</span>
+    <label class="ip-mfs__lbl">Hasta</label>
+    <input class="ip-mfs__date" type="date" [ngModel]="syncTo()" (ngModelChange)="syncTo.set($event)" />
+    <button
+      type="button"
+      class="ip-mfs__btn"
+      [disabled]="syncing()"
+      (click)="sync()"
+      title="Misma base remota que PPTO y reportes"
+    >
+      {{ syncing() ? 'Sincronizando…' : 'Sincronizar todo' }}
+    </button>
+  </div>
+  <div class="ip-mfs__opts">
+    <label class="ip-mfs__chk"
+      ><input type="checkbox" [ngModel]="fullHistorialServicios()" (ngModelChange)="fullHistorialServicios.set($event)" />
+      Historial completo de servicios (todas las consulta_cups por paciente)</label
+    >
+    <label class="ip-mfs__chk"
+      ><input
+        type="checkbox"
+        [ngModel]="includeAgendaOnlyPacientes()"
+        (ngModelChange)="includeAgendaOnlyPacientes.set($event)"
+      />
+      Incluir pacientes solo en agenda (sin servicios en el rango)</label
+    >
+    <label class="ip-mfs__chk ip-mfs__chk--danger"
+      ><input type="checkbox" [ngModel]="replacePacientesCat()" (ngModelChange)="replacePacientesCat.set($event)" />
+      Borrar catálogo CRM de pacientes antes</label
+    >
+    <label class="ip-mfs__chk ip-mfs__chk--danger"
+      ><input type="checkbox" [ngModel]="replaceAgendaCat()" (ngModelChange)="replaceAgendaCat.set($event)" />
+      Borrar catálogo CRM de agenda antes</label
+    >
+  </div>
+  @if (ok()) {
+    <p class="ip-mfs__ok">{{ ok() }}</p>
+  }
+  @if (err()) {
+    <p class="ip-mfs__err" role="alert">{{ err() }}</p>
+  }
+</div>

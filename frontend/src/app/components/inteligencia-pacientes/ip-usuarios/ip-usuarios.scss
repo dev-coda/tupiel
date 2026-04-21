@@ -1,0 +1,203 @@
+@use '../inteligencia-pacientes-tokens.scss' as *;
+
+:host {
+  display: block;
+}
+
+.ip-usuarios {
+  padding: 0.25rem 0.5rem 1rem;
+}
+
+.ip-usuarios__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.ip-usuarios__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ip-text1);
+}
+
+.ip-usuarios__sub {
+  margin: 0.25rem 0 0;
+  font-size: 0.72rem;
+  color: var(--ip-text4);
+  max-width: 42rem;
+  line-height: 1.35;
+}
+
+.ip-usuarios__muted {
+  font-size: 0.8rem;
+  color: var(--ip-text4);
+}
+
+.ip-usuarios__banner {
+  background: color-mix(in srgb, #d63031 12%, transparent);
+  border: 1px solid color-mix(in srgb, #d63031 35%, transparent);
+  color: #c0392b;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  margin-bottom: 0.75rem;
+}
+
+.ip-usuarios__table-wrap {
+  background: var(--ip-surface);
+  border: 1px solid var(--ip-line);
+  border-radius: 6px;
+  overflow: auto;
+  box-shadow: 0 1px 3px rgba(26, 26, 46, 0.08);
+}
+
+.ip-usuarios__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+
+  th,
+  td {
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid var(--ip-line);
+  }
+
+  th {
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ip-text4);
+    background: color-mix(in srgb, var(--ip-bg) 50%, transparent);
+  }
+
+  tbody tr:hover td {
+    background: color-mix(in srgb, var(--ip-primary) 4%, transparent);
+  }
+}
+
+.ip-usuarios__pill {
+  display: inline-block;
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--ip-line);
+  color: var(--ip-text3);
+
+  &--admin {
+    background: color-mix(in srgb, var(--ip-primary) 18%, transparent);
+    color: var(--ip-primary);
+  }
+}
+
+.ip-usuarios__actions {
+  white-space: nowrap;
+  text-align: right;
+}
+
+.ip-usuarios__link {
+  background: none;
+  border: none;
+  padding: 0 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--ip-primary);
+  cursor: pointer;
+  text-decoration: underline;
+
+  &--danger {
+    color: #c0392b;
+  }
+}
+
+.ip-usuarios__btn {
+  padding: 0.35rem 0.65rem;
+  border-radius: 4px;
+  border: 1px solid var(--ip-line);
+  background: var(--ip-surface);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--ip-text2);
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  &--primary {
+    border-color: var(--ip-primary);
+    background: color-mix(in srgb, var(--ip-primary) 12%, transparent);
+    color: var(--ip-primary);
+  }
+}
+
+.ip-usuarios__backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(26, 26, 46, 0.35);
+  z-index: 1000;
+}
+
+.ip-usuarios__modal {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1001;
+  width: min(420px, calc(100vw - 2rem));
+  max-height: min(90vh, 640px);
+  overflow: auto;
+  background: var(--ip-surface);
+  border: 1px solid var(--ip-line);
+  border-radius: 8px;
+  padding: 1rem 1.125rem;
+  box-shadow: 0 12px 40px rgba(26, 26, 46, 0.18);
+}
+
+.ip-usuarios__modal-title {
+  margin: 0 0 0.75rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--ip-text1);
+}
+
+.ip-usuarios__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.65rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--ip-text3);
+
+  span {
+    letter-spacing: 0.02em;
+  }
+}
+
+.ip-usuarios__input {
+  padding: 0.35rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid var(--ip-line);
+  font-size: 0.8rem;
+  background: var(--ip-bg);
+  color: var(--ip-text1);
+}
+
+.ip-usuarios__modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--ip-line);
+}

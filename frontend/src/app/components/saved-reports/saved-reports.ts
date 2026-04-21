@@ -13,6 +13,7 @@ import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
 import { MessageService } from 'primeng/api';
 import { ApiService } from '../../services/api.service';
+import { getApiBaseUrl } from '../../util/api-base-url';
 
 interface SavedReport {
   id: number;
@@ -145,8 +146,7 @@ export class SavedReports implements OnInit {
   viewReport(report: SavedReport) {
     if (report.report_type === 'controlador') {
       // Download Excel file
-      const config = (window as any).APP_CONFIG;
-      const baseUrl = config?.apiUrl || '/api';
+      const baseUrl = getApiBaseUrl();
       window.open(`${baseUrl}/saved-reports/${report.id}/download`, '_blank');
     } else {
       // Show JSON data in a modal or new page
@@ -162,8 +162,7 @@ export class SavedReports implements OnInit {
 
   downloadReport(report: SavedReport) {
     if (report.report_type === 'controlador') {
-      const config = (window as any).APP_CONFIG;
-      const baseUrl = config?.apiUrl || '/api';
+      const baseUrl = getApiBaseUrl();
       window.open(`${baseUrl}/saved-reports/${report.id}/download`, '_blank');
     } else {
       const data = report.data || (report.report_data ? JSON.parse(report.report_data) : null);

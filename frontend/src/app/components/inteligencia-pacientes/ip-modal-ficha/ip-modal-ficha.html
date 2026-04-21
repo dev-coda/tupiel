@@ -1,0 +1,121 @@
+<div class="ip-modal-ficha__backdrop" (click)="backdropClick($event)">
+  <div class="ip-modal-ficha__panel">
+    <div class="ip-modal-ficha__head">
+      <div>
+        <div class="ip-modal-ficha__name">{{ pac().nombre }}</div>
+        <div class="ip-modal-ficha__sub">
+          Gestión Comercial
+          @if (pac()['celular']) {
+            <span> · {{ pac()['celular'] }}</span>
+          }
+          @if (pac()['valor_total']) {
+            <span> · {{ money(pac()['valor_total'] || 0) }}</span>
+          }
+        </div>
+      </div>
+      <button type="button" class="ip-modal-ficha__x" (click)="close.emit()">×</button>
+    </div>
+
+    @if (origenDisplay) {
+      <div class="ip-modal-ficha__origen">
+        <span class="ip-modal-ficha__origen-label">Origen</span>
+        <span>{{ origenDisplay }}</span>
+      </div>
+    }
+
+    <div class="ip-modal-ficha__block">
+      <label class="ip-modal-ficha__lbl">Estado</label>
+      <div class="ip-modal-ficha__row">
+        @for (key of estadoKeys; track key) {
+          <button
+            type="button"
+            class="ip-modal-ficha__pill ip-modal-ficha__pill--estado"
+            [class.ip-modal-ficha__pill--on]="form.estado === key"
+            [style.border-color]="form.estado === key ? estadoCfg[key].color : 'var(--ip-line)'"
+            [style.background]="form.estado === key ? estadoCfg[key].bg : 'var(--ip-surface)'"
+            [style.color]="form.estado === key ? estadoCfg[key].color : 'var(--ip-text3)'"
+            (click)="form.estado = key"
+          >
+            {{ estadoCfg[key].label }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <div class="ip-modal-ficha__grid2">
+      <div>
+        <label class="ip-modal-ficha__lbl">Ticket</label>
+        <div class="ip-modal-ficha__row ip-modal-ficha__row--tight">
+          @for (key of ticketKeys; track key) {
+            <button
+              type="button"
+              class="ip-modal-ficha__mini"
+              [class.ip-modal-ficha__mini--on]="form.ticket === key"
+              [style.border-color]="form.ticket === key ? ticketCfg[key].color : 'var(--ip-line)'"
+              [style.background]="form.ticket === key ? ticketCfg[key].bg : 'var(--ip-surface)'"
+              [style.color]="form.ticket === key ? ticketCfg[key].color : 'var(--ip-text3)'"
+              (click)="form.ticket = key"
+            >
+              {{ ticketCfg[key].label }}
+            </button>
+          }
+        </div>
+      </div>
+      <div>
+        <label class="ip-modal-ficha__lbl">Actividad</label>
+        <div class="ip-modal-ficha__row ip-modal-ficha__row--tight">
+          @for (key of actividadKeys; track key) {
+            <button
+              type="button"
+              class="ip-modal-ficha__mini"
+              [class.ip-modal-ficha__mini--on]="form.actividad === key"
+              [style.border-color]="form.actividad === key ? actividadCfg[key].color : 'var(--ip-line)'"
+              [style.background]="form.actividad === key ? actividadCfg[key].bg : 'var(--ip-surface)'"
+              [style.color]="form.actividad === key ? actividadCfg[key].color : 'var(--ip-text3)'"
+              (click)="form.actividad = key"
+            >
+              {{ actividadCfg[key].label }}
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+
+    <div class="ip-modal-ficha__block">
+      <label class="ip-modal-ficha__lbl">Notas</label>
+      <textarea
+        rows="3"
+        [(ngModel)]="form.notas"
+        placeholder="Observaciones, intereses, seguimiento..."
+        class="ip-modal-ficha__textarea"
+      ></textarea>
+    </div>
+
+    @if (onCrearTarea()) {
+      <div class="ip-modal-ficha__send">
+        <span>¿Hacer seguimiento activo?</span>
+        <button type="button" class="ip-modal-ficha__send-btn" (click)="enviarATareas()">
+          → Enviar a Tareas
+        </button>
+      </div>
+    }
+
+    <div class="ip-modal-ficha__actions">
+      @if (fichaExistente) {
+        <button type="button" class="ip-modal-ficha__btn-del" (click)="eliminar()">
+          Eliminar ficha
+        </button>
+      } @else {
+        <span></span>
+      }
+      <div class="ip-modal-ficha__actions-right">
+        <button type="button" class="ip-modal-ficha__btn-secondary" (click)="close.emit()">
+          Cancelar
+        </button>
+        <button type="button" class="ip-modal-ficha__btn-primary" (click)="guardar()">
+          Guardar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

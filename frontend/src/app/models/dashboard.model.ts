@@ -26,6 +26,7 @@ export interface DailyMetrics {
   facturado: number;
   cartera: number;
   serviciosPrestados: number;
+  productosFacturado: number;
   metaDia: number;
   pctCumplimiento: number;
 }

@@ -1,0 +1,319 @@
+<div class="ip-agenda">
+  <div class="ip-agenda__main">
+    <div class="ip-agenda__stats">
+      <div class="ip-agenda__stat-col">
+        <div class="ip-agenda__stat-lbl">CITAS</div>
+        <div class="ip-agenda__stat-val">{{ filtered().length }}</div>
+        <div class="ip-agenda__stat-sub">mes {{ st.metricsYm() }}</div>
+        <app-ip-goal-progress metricKey="agenda_citas" [actual]="filtered().length" format="int" />
+      </div>
+      <div class="ip-agenda__vsep"></div>
+      <div class="ip-agenda__stat-col">
+        <div class="ip-agenda__stat-lbl">VALOR AGENDA</div>
+        <div class="ip-agenda__stat-val">{{ fM(totalValor()) }}</div>
+        <div class="ip-agenda__stat-sub">proyectado</div>
+        <app-ip-goal-progress metricKey="agenda_valor" [actual]="totalValor()" format="money" />
+      </div>
+      <div class="ip-agenda__vsep"></div>
+      <div class="ip-agenda__stat-col">
+        <div class="ip-agenda__stat-lbl">PACIENTES NUEVOS</div>
+        <div class="ip-agenda__stat-val">{{ totalNuevos() }}</div>
+        <div class="ip-agenda__stat-sub">sin historial</div>
+        <app-ip-goal-progress metricKey="agenda_nuevos" [actual]="totalNuevos()" format="int" />
+      </div>
+      <div class="ip-agenda__vsep"></div>
+      <div class="ip-agenda__stat-col">
+        <div class="ip-agenda__stat-lbl">DÍAS</div>
+        <div class="ip-agenda__stat-val">{{ grouped().length }}</div>
+        <div class="ip-agenda__stat-sub">con agenda</div>
+        <app-ip-goal-progress metricKey="agenda_dias" [actual]="grouped().length" format="int" />
+      </div>
+    </div>
+
+    <app-ip-medifony-sync-panel [context]="'agenda'" class="ip-agenda__mfs" />
+
+    <div class="ip-agenda__filters">
+      <input
+        #agendaExcelInp
+        type="file"
+        accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        class="ip-agenda__file"
+        (change)="onImportAgenda($event)"
+      />
+      <button
+        type="button"
+        class="ip-agenda__import"
+        [disabled]="importing()"
+        (click)="agendaExcelInp.click()"
+        title="Importar desde Excel (.xlsx). Columnas: Fecha, Hora, Documento, Nombre; opcional: Id, Profesional, CUPS, Subcategoría, Valor"
+      >
+        {{ importing() ? '…' : 'Importar Excel' }}
+      </button>
+      <select
+        class="ip-agenda__sel"
+        [ngModel]="profesional()"
+        (ngModelChange)="profesional.set($event)"
+      >
+        @for (p of profesionales(); track p) {
+          <option [value]="p">{{ p }}</option>
+        }
+      </select>
+      <select class="ip-agenda__sel" [ngModel]="subcat()" (ngModelChange)="subcat.set($event)">
+        @for (s of subcats; track s) {
+          <option [value]="s">{{ s }}</option>
+        }
+      </select>
+      <span class="ip-agenda__count">
+        {{ filtered().length }} cita{{ filtered().length !== 1 ? 's' : '' }}
+      </span>
+    </div>
+
+    @for (g of grouped(); track g[0]) {
+      @let fecha = g[0];
+      @let citas = g[1];
+      @let isOpen = openDias()[fecha];
+      @let nuevos = citas.filter((c) => !pacIndex()[c.doc]).length;
+      @let historial = citas.filter((c) => !!pacIndex()[c.doc]).length;
+      @let valorD = valorDia(citas);
+      @let porProf = porEspecialista(citas);
+
+      <div class="ip-agenda__day">
+        <button
+          type="button"
+          class="ip-agenda__day-head"
+          [class.ip-agenda__day-head--open]="isOpen"
+          (click)="toggleDay(fecha)"
+        >
+          <span class="ip-agenda__day-chev">{{ isOpen ? '▼' : '▶' }}</span>
+          <span class="ip-agenda__day-title">{{ fFecha(fecha) }}</span>
+          <div class="ip-agenda__day-badges">
+            @if (historial > 0) {
+              <span class="ip-agenda__badge ip-agenda__badge--hist">{{ historial }} historial</span>
+            }
+            @if (nuevos > 0) {
+              <span class="ip-agenda__badge ip-agenda__badge--new"
+                >{{ nuevos }} nuevo{{ nuevos !== 1 ? 's' : '' }}</span
+              >
+            }
+            <span class="ip-agenda__badge ip-agenda__badge--cit"
+              >{{ citas.length }} cita{{ citas.length !== 1 ? 's' : '' }}</span
+            >
+            <span class="ip-agenda__day-money">{{ fM(valorD) }}</span>
+          </div>
+        </button>
+
+        @if (isOpen) {
+          <div class="ip-agenda__day-map">
+            <div class="ip-agenda__map-title">Especialistas del día</div>
+            <div class="ip-agenda__map-row">
+              @for (pe of entriesPorProf(porProf); track pe[0]) {
+                @let prof = pe[0];
+                @let pcitas = pe[1];
+                @let valorProf = valorProfesional(pcitas);
+                @let nuevosProf = nuevosProfCount(pcitas);
+                <div class="ip-agenda__map-card">
+                  <div class="ip-agenda__map-prof">{{ prof }}</div>
+                  <div class="ip-agenda__map-meta">
+                    {{ pcitas.length }} cita{{ pcitas.length !== 1 ? 's' : '' }} · {{ fM(valorProf) }}
+                    @if (nuevosProf > 0) {
+                      <span class="ip-agenda__map-nuevo"> · {{ nuevosProf }} nuevo{{ nuevosProf !== 1 ? 's' : '' }}</span>
+                    }
+                  </div>
+                  <div class="ip-agenda__map-list">
+                    @for (c of pcitas; track c.id) {
+                      @let esNuevo = !pacIndex()[c.doc];
+                      @let sc = subcatColor[c.subcategoria] || { color: 'var(--ip-text3)' };
+                      <div class="ip-agenda__map-line">
+                        <span class="ip-agenda__map-h">{{ c.hora }}</span>
+                        <span
+                          class="ip-agenda__map-dot"
+                          [class.ip-agenda__map-dot--new]="esNuevo"
+                        ></span>
+                        <span class="ip-agenda__map-name">{{
+                          c.nombre.split(' ').slice(0, 2).join(' ')
+                        }}</span>
+                        <span class="ip-agenda__map-sc" [style.color]="sc.color">{{
+                          c.subcategoria.slice(0, 6)
+                        }}</span>
+                      </div>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+
+          <div class="ip-agenda__citas">
+            @for (c of citas; track c.id) {
+              @let pac = pacIndex()[c.doc];
+              @let esNuevo = !pac;
+              @let isActive = selectedCita()?.id === c.id;
+              <div
+                class="ip-agenda__cita"
+                [class.ip-agenda__cita--active]="isActive"
+                [class.ip-agenda__cita--nuevo]="esNuevo"
+                (click)="selectCita(c)"
+              >
+                <div class="ip-agenda__cita-h">{{ c.hora }}</div>
+                <div
+                  class="ip-agenda__cita-av"
+                  [class.ip-agenda__cita-av--new]="esNuevo"
+                  >{{ ini(c.nombre) }}</div
+                >
+                <div class="ip-agenda__cita-info">
+                  <div class="ip-agenda__cita-name-row">
+                    <span class="ip-agenda__cita-nombre">{{ c.nombre }}</span>
+                    <span class="ip-agenda__cita-tag" [class.ip-agenda__cita-tag--new]="esNuevo">
+                      · {{ esNuevo ? 'Nuevo' : 'Historial' }}
+                    </span>
+                  </div>
+                  <div class="ip-agenda__cita-sub">{{ c.subcategoria }} · {{ c.profesional }}</div>
+                </div>
+                <div class="ip-agenda__cita-val">{{ fM(c.valor) }}</div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+  @if (selectedCita(); as cita) {
+    <aside class="ip-agenda__panel">
+      <div class="ip-agenda__panel-head" [class.ip-agenda__panel-head--nuevo]="!pacIndex()[cita.doc]">
+        <div class="ip-agenda__panel-ident">
+          <div
+            class="ip-agenda__panel-av"
+            [class.ip-agenda__panel-av--nuevo]="!pacIndex()[cita.doc]"
+            >{{ ini(cita.nombre) }}</div
+          >
+          <div>
+            <div class="ip-agenda__panel-name">{{ cita.nombre }}</div>
+            <span
+              class="ip-agenda__panel-chip"
+              [class.ip-agenda__panel-chip--nuevo]="!pacIndex()[cita.doc]"
+            >
+              {{ pacIndex()[cita.doc] ? 'CON HISTORIAL' : 'PACIENTE NUEVO' }}
+            </span>
+            @if (pacIndex()[cita.doc]?.celular; as cel) {
+              <div class="ip-agenda__panel-cel">
+                <button
+                  type="button"
+                  class="ip-agenda__copy"
+                  (click)="copiarCelular(cel); $event.stopPropagation()"
+                >
+                  📋 {{ cel }}
+                  <span [class.ip-agenda__copy-yes]="copiedCel()">{{
+                    copiedCel() ? '✓ Copiado' : 'copiar'
+                  }}</span>
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+        <button type="button" class="ip-agenda__panel-x" (click)="selectedCita.set(null)">×</button>
+      </div>
+
+      <div class="ip-agenda__panel-body">
+        @let sc = subcatColor[cita.subcategoria] || { bg: 'var(--ip-line2)', color: 'var(--ip-text3)' };
+        @let pac = pacIndex()[cita.doc];
+        @let cross = calcCross(pac);
+        @let ficha = st.fichas()[cita.doc];
+
+        <div class="ip-agenda__panel-cita" [style.background]="sc.bg">
+          <div class="ip-agenda__panel-cita-lbl" [style.color]="sc.color">Cita programada</div>
+          <div class="ip-agenda__panel-cita-row">
+            <div>
+              <div class="ip-agenda__panel-h" [style.color]="sc.color">{{ cita.hora }}</div>
+              <div class="ip-agenda__panel-sub">{{ cita.subcategoria }} · {{ cita.cups }}</div>
+              <div class="ip-agenda__panel-prof">{{ cita.profesional }}</div>
+            </div>
+            <div class="ip-agenda__panel-precio">{{ fM(cita.valor) }}</div>
+          </div>
+        </div>
+
+        @if (!pac) {
+          <div class="ip-agenda__panel-nuevo">
+            <div class="ip-agenda__panel-nuevo-ic">👤</div>
+            <div class="ip-agenda__panel-nuevo-t">Primera visita</div>
+            <div class="ip-agenda__panel-nuevo-d">No hay historial previo registrado</div>
+          </div>
+        } @else {
+          <div class="ip-agenda__kpis">
+            @for (
+              row of [
+                { label: 'Visitas', val: pac.visitas },
+                { label: 'Valor Total', val: fM(pac.valor_total) },
+                {
+                  label: 'Primera Visita',
+                  val: pac.historial?.length ? fD(pac.historial[pac.historial.length - 1].fecha) : '—',
+                },
+                { label: 'Última Visita', val: fD(pac.ultima) },
+              ];
+              track row.label
+            ) {
+              <div class="ip-agenda__kpi">
+                <div class="ip-agenda__kpi-l">{{ row.label }}</div>
+                <div class="ip-agenda__kpi-v">{{ row.val }}</div>
+              </div>
+            }
+          </div>
+
+          @if (pac.historial && pac.historial.length > 0) {
+            <div>
+              <div class="ip-agenda__hist-title">Historial de citas</div>
+              <div class="ip-agenda__hist-list">
+                @for (h of pac.historial; track $index) {
+                  <div class="ip-agenda__hist-row">
+                    <div>
+                      <div class="ip-agenda__hist-f">{{ fD(h.fecha) }}</div>
+                      <div class="ip-agenda__hist-sc">{{ h.subcategoria }}</div>
+                    </div>
+                    <div class="ip-agenda__hist-val">{{ fM(h.valor) }}</div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          @if (cross.length > 0) {
+            <div class="ip-agenda__cross">
+              <div class="ip-agenda__cross-title">Oportunidades Cross-sell</div>
+              <div class="ip-agenda__cross-tags">
+                @for (s of cross; track s) {
+                  <span class="ip-agenda__cross-tag">{{ s }}</span>
+                }
+              </div>
+            </div>
+          }
+        }
+
+        <div class="ip-agenda__gestion">
+          @if (ficha) {
+            <div class="ip-agenda__gest-row">
+              <span class="ip-agenda__gest-lbl">Gestión</span>
+              <span
+                class="ip-agenda__gest-est"
+                [style.background]="estadoCfg[ficha.estado]?.bg"
+                [style.color]="estadoCfg[ficha.estado]?.color"
+                >{{ estadoCfg[ficha.estado]?.label }}</span
+              >
+            </div>
+          }
+          <button
+            type="button"
+            class="ip-agenda__gest-btn"
+            [class.ip-agenda__gest-btn--fill]="!ficha"
+            (click)="abrirFicha(cita)"
+          >
+            {{ ficha ? 'Editar Gestión Comercial' : '+ Crear Ficha de Gestión' }}
+          </button>
+        </div>
+      </div>
+    </aside>
+  }
+</div>
+
+@if (fichaModal(); as pac) {
+  <app-ip-modal-ficha [pac]="pac" [origen]="'Agenda'" (close)="fichaModal.set(null)" />
+}

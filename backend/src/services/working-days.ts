@@ -1,4 +1,5 @@
 import { appQuery } from '../config/app-database';
+import { toDateString } from '../utils/dates';
 
 /**
  * Calculate working days in a date range.
@@ -48,8 +49,8 @@ export async function calculateWorkingDaysInMonth(year: number, month: number): 
   const firstDay = new Date(year, month - 1, 1);
   const lastDay = new Date(year, month, 0);
 
-  const from = firstDay.toISOString().substring(0, 10);
-  const to = lastDay.toISOString().substring(0, 10);
+  const from = toDateString(firstDay);
+  const to = toDateString(lastDay);
 
   return calculateWorkingDays(from, to);
 }

@@ -4,7 +4,7 @@
   "description": "TuPiel read-only reporting backend",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && cp src/config/ip-seed-*.json dist/config/",
     "start": "node dist/index.js",
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "report:rentabilidad": "ts-node --transpile-only src/cli/generate-rentabilidad.ts"
@@ -16,6 +16,7 @@
     "exceljs": "^4.4.0",
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.3",
+    "multer": "^2.1.1",
     "mysql2": "^3.18.1",
     "node-cron": "^3.0.3"
   },
@@ -24,6 +25,7 @@
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/jsonwebtoken": "^9.0.10",
+    "@types/multer": "^2.1.0",
     "@types/node": "^22.10.0",
     "@types/node-cron": "^3.0.11",
     "ts-node-dev": "^2.0.0",

@@ -1,0 +1,172 @@
+@use '../inteligencia-pacientes-tokens.scss' as *;
+
+:host {
+  display: block;
+  width: 100%;
+}
+
+.ip-mfs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.45rem 0.55rem;
+  border-radius: 6px;
+  border: 1px solid var(--ip-line);
+  background: color-mix(in srgb, var(--ip-primary) 5%, var(--ip-surface));
+  box-shadow: 0 1px 2px rgba(26, 26, 46, 0.06);
+}
+
+.ip-mfs--agenda {
+  border-style: dashed;
+  border-color: color-mix(in srgb, #0984e3 45%, var(--ip-line));
+  background: color-mix(in srgb, #0984e3 6%, var(--ip-surface));
+}
+
+.ip-mfs__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.75rem;
+}
+
+.ip-mfs__title {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ip-text2);
+}
+
+.ip-mfs__hint {
+  font-size: 0.65rem;
+  color: var(--ip-text4);
+  line-height: 1.35;
+  flex: 1;
+  min-width: 12rem;
+}
+
+.ip-mfs__steps {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.62rem;
+  color: var(--ip-text3);
+  line-height: 1.45;
+}
+
+.ip-mfs__full {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.75rem;
+  padding: 0.35rem 0;
+  border-top: 1px dashed var(--ip-line2);
+  border-bottom: 1px dashed var(--ip-line2);
+}
+
+.ip-mfs__full-btn {
+  padding: 0.3rem 0.65rem;
+  border-radius: 5px;
+  border: 1px solid #d63031;
+  background: rgba(214, 48, 49, 0.08);
+  color: #c0392b;
+  font-size: 0.68rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
+
+.ip-mfs__full-hint {
+  font-size: 0.6rem;
+  color: var(--ip-text4);
+  flex: 1;
+  min-width: 10rem;
+}
+
+.ip-mfs__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+}
+
+.ip-mfs__lbl {
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ip-text4);
+}
+
+.ip-mfs__date {
+  padding: 0.22rem 0.4rem;
+  font-size: 0.75rem;
+  border-radius: 4px;
+  border: 1px solid var(--ip-line);
+  background: var(--ip-bg);
+  color: var(--ip-text1);
+}
+
+.ip-mfs__sep {
+  color: var(--ip-text4);
+  font-size: 0.75rem;
+}
+
+.ip-mfs__btn {
+  margin-left: auto;
+  padding: 0.35rem 0.75rem;
+  border-radius: 4px;
+  border: 1px solid var(--ip-primary);
+  background: color-mix(in srgb, var(--ip-primary) 14%, transparent);
+  color: var(--ip-primary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
+
+.ip-mfs__opts {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.ip-mfs__chk {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+  font-size: 0.65rem;
+  color: var(--ip-text3);
+  cursor: pointer;
+  line-height: 1.35;
+
+  input {
+    margin-top: 0.12rem;
+    cursor: pointer;
+  }
+
+  &--danger {
+    color: var(--ip-text4);
+  }
+}
+
+.ip-mfs__ok {
+  margin: 0;
+  font-size: 0.68rem;
+  color: #00b894;
+}
+
+.ip-mfs__err {
+  margin: 0;
+  font-size: 0.68rem;
+  color: #d63031;
+}

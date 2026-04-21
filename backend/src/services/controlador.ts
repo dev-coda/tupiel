@@ -15,6 +15,8 @@ import {
 } from '../config/controlador-config';
 import { calculateWorkingDays, calculateWorkingDaysFallback } from './working-days';
 import { getMonthlyConfig } from './monthly-config';
+import { getDailyFacturaBilling } from './dashboard';
+import { toDateString } from '../utils/dates';
 
 // ─── Helpers ───────────────────────────────────────────────
 
@@ -48,7 +50,7 @@ function dateRange(from: string, to: string): string[] {
   const d = new Date(from + 'T00:00:00');
   const end = new Date(to + 'T00:00:00');
   while (d <= end) {
-    dates.push(d.toISOString().substring(0, 10));
+    dates.push(toDateString(d));
     d.setDate(d.getDate() + 1);
   }
   return dates;
@@ -218,11 +220,11 @@ export async function generateControlador(
     // Auto-calculate dias ejecutados as past business days
     const today = new Date();
     const monthStart = new Date(year, month - 1, 1);
-    const todayStr = today.toISOString().substring(0, 10);
+    const todayS = toDateString(today);
     const monthStartStr = `${year}-${String(month).padStart(2, '0')}-01`;
     
     try {
-      const endDate = today < new Date(dateTo + 'T00:00:00') ? todayStr : dateTo;
+      const endDate = today < new Date(dateTo + 'T00:00:00') ? todayS : dateTo;
       const workingDaysExecuted = await calculateWorkingDays(monthStartStr, endDate);
       cfg.diasEjecutados = Math.max(1, Math.min(workingDaysExecuted, cfg.diasHabilesMes));
     } catch (err2) {
@@ -246,16 +248,27 @@ export async function generateControlador(
   const estReport = await generateEstimada(dateFrom, dateTo);
   console.log(`  → ${estReport.rows.length} estimada rows`);
 
+  // ── Calculate product billing from invoices ──
+  let facturadoProductos = 0;
+  try {
+    const dailyFactura = await getDailyFacturaBilling(dateFrom, dateTo);
+    for (const v of dailyFactura.values()) {
+      facturadoProductos += v.productos;
+    }
+  } catch (err) {
+    console.warn('Controlador: failed to load factura-based product billing:', err);
+  }
+
   // ── 2. Build workbook ──
   const wb = new ExcelJS.Workbook();
   wb.creator = 'TuPiel Reports';
   wb.created = new Date();
 
   // ── Tab order matches the reference ──
-  buildProductosTab(wb, cfg);
+  buildProductosTab(wb, cfg, facturadoProductos);
   buildPptoLoungeTab(wb, rentReport.rows, estReport.rows, cfg);
   buildPptoCeTab(wb, rentReport.rows, estReport.rows, cfg);
-  buildBalancePptoTab(wb, rentReport.rows, estReport.rows, cfg);
+  buildBalancePptoTab(wb, rentReport.rows, estReport.rows, cfg, facturadoProductos);
   buildInfoProyeccionTab(wb, estReport.rows);
   buildInfoRentabilidadTab(wb, rentReport.rows);
   buildTableroAgendaTab(wb, rentReport.rows, estReport.rows, dateFrom, dateTo, cfg);
@@ -491,7 +504,7 @@ function buildStrategyPanel(
     [title, ''],
     ['DÍAS HÁB MES ', cfg.diasHabilesMes],
     ['DÍAS EJECT', cfg.diasEjecutados],
-    ['FECHA', new Date().toISOString().substring(0, 10)],
+    ['FECHA', toDateString(new Date())],
     ['META FEBRERO', cfg.metaGlobal, MONEY_FMT],
     ['VENTA ESPERADA FEB', ventaEsperada, MONEY_FMT],
     ['FACTURADO FEB', facturado, MONEY_FMT],
@@ -525,7 +538,8 @@ function buildBalancePptoTab(
   wb: ExcelJS.Workbook,
   rentRows: RentabilidadRow[],
   estRows: EstimadaRow[],
-  cfg: ControladorConfig
+  cfg: ControladorConfig,
+  facturadoProductos: number = 0
 ) {
   const ws = wb.addWorksheet('BALANCE PPTO');
 
@@ -545,12 +559,11 @@ function buildBalancePptoTab(
     (s, p) => s + sumBy(rentRows, 'personal_atiende', p.nombre, 'vlr'), 0
   );
 
-  const totalFacturado = dermaVenta + medEstVenta + loungeVenta + cfg.facturadoProductos;
+  const totalFacturado = dermaVenta + medEstVenta + loungeVenta + facturadoProductos;
   const totalProyeccion = estRows.reduce((s, r) => s + r.vlr, 0);
 
   const pctAlDia = cfg.diasEjecutados / cfg.diasHabilesMes;
   const pctRealCum = totalFacturado / cfg.metaGlobal;
-  // Daily goal uses working days (not calendar days) - automatically adjusts when non-working days change
   const metaDiaria = cfg.metaGlobal / cfg.diasHabilesMes;
   const ventaEsperada = metaDiaria * cfg.diasEjecutados;
   const faltaCumplir = cfg.metaGlobal - totalFacturado - totalProyeccion;
@@ -562,7 +575,7 @@ function buildBalancePptoTab(
 
   // Left column — strategy
   const leftData: [string, number | string, string?][] = [
-    ['REPORTE GENERAL', new Date().toISOString().substring(0, 10)],
+    ['REPORTE GENERAL', toDateString(new Date())],
     ['', ''],
     ['', ''],
     ['% ESPERADO AL DÍA', pctAlDia, PCT_FMT],
@@ -574,10 +587,10 @@ function buildBalancePptoTab(
     ['ESTRATEGIA FEBRERO', ''],
     ['DÍAS HÁB MES ', cfg.diasHabilesMes],
     ['DÍAS EJECT', cfg.diasEjecutados],
-    ['FECHA', new Date().toISOString().substring(0, 10)],
+    ['FECHA', toDateString(new Date())],
     ['META FEBRERO', cfg.metaGlobal, MONEY_FMT],
     ['VENTA ESPERADA FEB', ventaEsperada, MONEY_FMT],
-    ['FACTURADO FEB', totalFacturado - cfg.facturadoProductos, MONEY_FMT],
+    ['FACTURADO FEB', totalFacturado - facturadoProductos, MONEY_FMT],
     ['PROYECCIÓN FEB', totalProyeccion, MONEY_FMT],
     ['FALTA X CUMPLIR', faltaCumplir, MONEY_FMT],
     ['RESULTADO ESP', resultadoEsp, MONEY_FMT],
@@ -610,7 +623,7 @@ function buildBalancePptoTab(
     ['Tu Piel Derma', dermaVenta, dermaPpto],
     ['Tu Piel Medicina Estética', medEstVenta, medEstPpto],
     ['TP Lounge', loungeVenta, loungePpto],
-    ['Productos', cfg.facturadoProductos, cfg.metaProductos],
+    ['Productos', facturadoProductos, cfg.metaProductos],
   ];
   r = 16;
   for (const [name, venta, meta] of units) {
@@ -805,7 +818,7 @@ function buildTableroAgendaTab(
   styleHeaderRow(ws, 3, 10);
 
   const dates = dateRange(dateFrom, dateTo);
-  const todayStr = new Date().toISOString().substring(0, 10);
+  const todayStr = toDateString(new Date());
 
   for (let i = 0; i < dates.length; i++) {
     const d = dates[i];
@@ -903,7 +916,7 @@ function buildTableroAgendaTab(
   const strategyStart = 12;
   const strategyData: [string, number | string, string?][] = [
     ['REPORTE GENERAL', ''],
-    ['', new Date().toISOString().substring(0, 10)],
+    ['', toDateString(new Date())],
     ['', ''],
     ['% ESPERADO AL DÍA', cfg.diasEjecutados / cfg.diasHabilesMes, PCT_FMT],
     ['% REAL AL DÍA', facturado / cfg.metaGlobal, PCT_FMT],
@@ -914,7 +927,7 @@ function buildTableroAgendaTab(
     ['ESTRATEGIA FEBRERO', ''],
     ['DÍAS HÁB MES ', cfg.diasHabilesMes],
     ['DÍAS EJECT', cfg.diasEjecutados],
-    ['FECHA', new Date().toISOString().substring(0, 10)],
+    ['FECHA', toDateString(new Date())],
     ['META FEBRERO', cfg.metaGlobal, MONEY_FMT],
     ['VENTA ESPERADA FEB', metaDiaria * cfg.diasEjecutados, MONEY_FMT],
     ['FACTURADO FEB', facturado, MONEY_FMT],
@@ -1069,7 +1082,7 @@ function buildReporteXDiasTab(
 
 // ─── PRODUCTOS ─────────────────────────────────────────────
 
-function buildProductosTab(wb: ExcelJS.Workbook, cfg: ControladorConfig) {
+function buildProductosTab(wb: ExcelJS.Workbook, cfg: ControladorConfig, facturadoProductos: number = 0) {
   const ws = wb.addWorksheet('PRODUCTOS');
 
   ws.getRow(2).getCell(2).value = 'ROTACIÓN PRODUCTOS';
@@ -1082,15 +1095,15 @@ function buildProductosTab(wb: ExcelJS.Workbook, cfg: ControladorConfig) {
   const leftData: [string, number | string][] = [
     ['DÍAS HÁB MES ', cfg.diasHabilesMes],
     ['DÍAS EJECT', cfg.diasEjecutados],
-    ['FECHA', new Date().toISOString().substring(0, 10)],
+    ['FECHA', toDateString(new Date())],
     ['META FEBRERO', cfg.metaProductos],
     ['META DÍA', cfg.metaProductos / cfg.diasHabilesMes],
     ['VENTA ESPERADA', (cfg.metaProductos / cfg.diasHabilesMes) * cfg.diasEjecutados],
-    ['FACTURADO FEB', cfg.facturadoProductos],
-    ['VENTA ADICIONAL', cfg.facturadoProductos - (cfg.metaProductos / cfg.diasHabilesMes) * cfg.diasEjecutados],
-    ['FALTA X CUMPLIR', cfg.metaProductos - cfg.facturadoProductos],
+    ['FACTURADO FEB', facturadoProductos],
+    ['VENTA ADICIONAL', facturadoProductos - (cfg.metaProductos / cfg.diasHabilesMes) * cfg.diasEjecutados],
+    ['FALTA X CUMPLIR', cfg.metaProductos - facturadoProductos],
     ['% ESPERADO', cfg.diasEjecutados / cfg.diasHabilesMes],
-    ['CUMPLIMIENTO', cfg.facturadoProductos / cfg.metaProductos],
+    ['CUMPLIMIENTO', cfg.metaProductos > 0 ? facturadoProductos / cfg.metaProductos : 0],
   ];
 
   let r = 5;

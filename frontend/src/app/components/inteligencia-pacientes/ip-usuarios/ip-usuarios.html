@@ -1,0 +1,110 @@
+<div class="ip-usuarios">
+  <div class="ip-usuarios__head">
+    <div>
+      <h1 class="ip-usuarios__title">Usuarios Inteligencia</h1>
+      <p class="ip-usuarios__sub">
+        Crear y editar cuentas con rol administrador u operario (módulo Inteligencia de Pacientes).
+      </p>
+    </div>
+    <button type="button" class="ip-usuarios__btn ip-usuarios__btn--primary" (click)="openCreate()">
+      Nuevo usuario
+    </button>
+  </div>
+
+  @if (error()) {
+    <div class="ip-usuarios__banner" role="alert">{{ error() }}</div>
+  }
+
+  @if (loading()) {
+    <p class="ip-usuarios__muted">Cargando…</p>
+  } @else {
+    <div class="ip-usuarios__table-wrap">
+      <table class="ip-usuarios__table">
+        <thead>
+          <tr>
+            <th>Usuario</th>
+            <th>Nombre</th>
+            <th>Rol</th>
+            <th>Cargo</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (u of users(); track u.id) {
+            <tr>
+              <td>{{ u.username }}</td>
+              <td>{{ u.name }}</td>
+              <td>
+                <span
+                  class="ip-usuarios__pill"
+                  [class.ip-usuarios__pill--admin]="u.ipRol === 'admin'"
+                  >{{ u.ipRol }}</span
+                >
+              </td>
+              <td>{{ u.ipCargo }}</td>
+              <td class="ip-usuarios__actions">
+                <button type="button" class="ip-usuarios__link" (click)="openEdit(u)">Editar</button>
+                @if (u.id !== auth.user()?.id) {
+                  <button type="button" class="ip-usuarios__link ip-usuarios__link--danger" (click)="deleteUser(u)">
+                    Eliminar
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  @if (modalOpen()) {
+    <div class="ip-usuarios__backdrop" (click)="closeModal()"></div>
+    <div class="ip-usuarios__modal" role="dialog" aria-modal="true" aria-labelledby="ip-usuarios-modal-title">
+      <h2 id="ip-usuarios-modal-title" class="ip-usuarios__modal-title">
+        {{ editing() ? 'Editar usuario' : 'Nuevo usuario' }}
+      </h2>
+
+      @if (!editing()) {
+        <label class="ip-usuarios__field">
+          <span>Usuario (login)</span>
+          <input class="ip-usuarios__input" [(ngModel)]="formUsername" autocomplete="username" />
+        </label>
+      }
+
+      <label class="ip-usuarios__field">
+        <span>Nombre completo</span>
+        <input class="ip-usuarios__input" [(ngModel)]="formName" autocomplete="name" />
+      </label>
+
+      <label class="ip-usuarios__field">
+        <span>{{ editing() ? 'Nueva contraseña (opcional)' : 'Contraseña' }}</span>
+        <input
+          class="ip-usuarios__input"
+          type="password"
+          [(ngModel)]="formPassword"
+          [attr.autocomplete]="editing() ? 'new-password' : 'new-password'"
+        />
+      </label>
+
+      <label class="ip-usuarios__field">
+        <span>Rol Inteligencia</span>
+        <select class="ip-usuarios__input" [(ngModel)]="formRol">
+          <option value="admin">admin</option>
+          <option value="operario">operario</option>
+        </select>
+      </label>
+
+      <label class="ip-usuarios__field">
+        <span>Cargo (etiqueta en barra lateral)</span>
+        <input class="ip-usuarios__input" [(ngModel)]="formCargo" placeholder="Ej. Coordinador" />
+      </label>
+
+      <div class="ip-usuarios__modal-actions">
+        <button type="button" class="ip-usuarios__btn" (click)="closeModal()" [disabled]="saving()">Cancelar</button>
+        <button type="button" class="ip-usuarios__btn ip-usuarios__btn--primary" (click)="save()" [disabled]="saving()">
+          {{ saving() ? 'Guardando…' : 'Guardar' }}
+        </button>
+      </div>
+    </div>
+  }
+</div>

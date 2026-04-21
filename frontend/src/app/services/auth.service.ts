@@ -2,21 +2,24 @@ import { Injectable, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, tap, catchError, of, map } from 'rxjs';
+import { getApiBaseUrl } from '../util/api-base-url';
 
 interface LoginResponse {
   token: string;
-  user: { id: number; username: string; name: string };
+  user: UserInfo;
 }
 
-interface UserInfo {
+export interface UserInfo {
   id: number;
   username: string;
   name: string;
+  /** Inteligencia de Pacientes role from app DB */
+  ipRol?: 'admin' | 'operario';
+  ipCargo?: string;
 }
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly baseUrl: string;
   private readonly TOKEN_KEY = 'tupiel_token';
   private readonly USER_KEY = 'tupiel_user';
 
@@ -24,10 +27,11 @@ export class AuthService {
   readonly user = this._user.asReadonly();
   readonly isLoggedIn = computed(() => !!this._user());
 
-  constructor(private http: HttpClient, private router: Router) {
-    const config = (window as any).APP_CONFIG;
-    this.baseUrl = config?.apiUrl || '/api';
+  private base(): string {
+    return getApiBaseUrl();
+  }
 
+  constructor(private http: HttpClient, private router: Router) {
     // Restore user from localStorage on init
     const savedUser = localStorage.getItem(this.USER_KEY);
     if (savedUser && this.getToken()) {
@@ -45,7 +49,7 @@ export class AuthService {
 
   login(username: string, password: string): Observable<LoginResponse> {
     return this.http
-      .post<LoginResponse>(`${this.baseUrl}/auth/login`, { username, password })
+      .post<LoginResponse>(`${this.base()}/auth/login`, { username, password })
       .pipe(
         tap((res) => {
           localStorage.setItem(this.TOKEN_KEY, res.token);
@@ -69,7 +73,7 @@ export class AuthService {
     if (!token) return of(false);
 
     return this.http
-      .get<{ user: UserInfo }>(`${this.baseUrl}/auth/me`, {
+      .get<{ user: UserInfo }>(`${this.base()}/auth/me`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       .pipe(

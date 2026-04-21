@@ -1,0 +1,43 @@
+@use '../inteligencia-pacientes-tokens.scss' as *;
+
+:host {
+  display: block;
+  margin-top: 0.35rem;
+}
+
+.ip-gp {
+  max-width: 100%;
+}
+
+.ip-gp__track {
+  height: 4px;
+  border-radius: 3px;
+  background: var(--ip-line2);
+  overflow: hidden;
+}
+
+.ip-gp__fill {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--ip-amber);
+  transition: width 0.2s ease;
+}
+
+.ip-gp--mid .ip-gp__fill {
+  background: #0984e3;
+}
+
+.ip-gp--ok .ip-gp__fill {
+  background: var(--ip-green);
+}
+
+.ip-gp__row {
+  margin-top: 0.2rem;
+}
+
+.ip-gp__meta {
+  font-size: 0.58rem;
+  font-weight: 600;
+  color: var(--ip-text4);
+  letter-spacing: 0.02em;
+}

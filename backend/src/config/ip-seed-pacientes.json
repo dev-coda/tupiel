@@ -1,0 +1,713 @@
+[
+  {
+    "doc": "1020304050",
+    "nombre": "Andrea Martínez López",
+    "celular": "3001234567",
+    "edad": 34,
+    "procedencia": "Referido",
+    "valor_total": 2850000,
+    "visitas": 8,
+    "ultima": "2026-03-15",
+    "subcategorias": [
+      "INYECTABLES",
+      "RELLENOS"
+    ],
+    "profesional": "Dra. Sofía Ramírez",
+    "historial": [
+      {
+        "fecha": "2026-03-15",
+        "cups": "TOX001",
+        "subcategoria": "INYECTABLES",
+        "profesional": "Dra. Sofía Ramírez",
+        "valor": 350000
+      },
+      {
+        "fecha": "2026-01-20",
+        "cups": "REL002",
+        "subcategoria": "RELLENOS",
+        "profesional": "Dra. Sofía Ramírez",
+        "valor": 800000
+      },
+      {
+        "fecha": "2025-11-10",
+        "cups": "TOX001",
+        "subcategoria": "INYECTABLES",
+        "profesional": "Dra. Sofía Ramírez",
+        "valor": 350000
+      },
+      {
+        "fecha": "2025-09-05",
+        "cups": "REL002",
+        "subcategoria": "RELLENOS",
+        "profesional": "Dra. Sofía Ramírez",
+        "valor": 800000
+      },
+      {
+        "fecha": "2025-06-18",
+        "cups": "TOX001",
+        "subcategoria": "INYECTABLES",
+        "profesional": "Dra. Sofía Ramírez",
+        "valor": 350000
+      }
+    ]
+  },
+  {
+    "doc": "1030405060",
+    "nombre": "Claudia Ríos Herrera",
+    "celular": "3109876543",
+    "edad": 41,
+    "procedencia": "Instagram",
+    "valor_total": 1450000,
+    "visitas": 4,
+    "ultima": "2026-02-20",
+    "subcategorias": [
+      "PRODEEP"
+    ],
+    "profesional": "Dr. Carlos Vega",
+    "historial": [
+      {
+        "fecha": "2026-02-20",
+        "cups": "PRO004",
+        "subcategoria": "PRODEEP",
+        "profesional": "Dr. Carlos Vega",
+        "valor": 450000
+      },
+      {
+        "fecha": "2025-11-15",
+        "cups": "PRO004",
+        "subcategoria": "PRODEEP",
+        "profesional": "Dr. Carlos Vega",
+        "valor": 450000
+      },
+      {
+        "fecha": "2025-08-10",
+        "cups": "PRO004",
+        "subcategoria": "PRODEEP",
+        "profesional": "Dr. Carlos Vega",
+        "valor": 450000
+      },
+      {
+        "fecha": "2025-05-22",
+        "cups": "PRO004",
+        "subcategoria": "PRODEEP",
+        "profesional": "Dr. Carlos Vega",
+        "valor": 100000
+      }
+    ]
+  },
+  {
+    "doc": "1040506070",
+    "nombre": "Valentina Torres Ruiz",
+    "celular": "3152345678",
+    "edad": 28,
+    "procedencia": "Referido",
+    "valor_total": 3200000,
+    "visitas": 11,
+    "ultima": "2026-04-01",
+    "subcategorias": [
+      "INYECTABLES",
+      "BIOESTIMULADORES"
+    ],
+    "profesional": "Dra. Sofía Ramírez",
+    "historial": [
+      {
+        "fecha": "2026-04-01",
+        "cups": "TOX001",
+        "subcategoria": "INYECTABLES",
+        "profesional": "Dra. Sofía Ramírez",
+        "valor": 350000
+      },
+      {
+        "fecha": "2026-02-10",
+        "cups": "BIO003",
+        "subcategoria": "BIOESTIMULADORES",
+        "profesional": "Dra. Sofía Ramírez",
+        "valor": 600000
+      },
+      {
+        "fecha": "2025-12-05",
+        "cups": "TOX001",
+        "subcategoria": "INYECTABLES",
+        "profesional": "Dra. Sofía Ramírez",
+        "valor": 350000
+      },
+      {
+        "fecha": "2025-10-01",
+        "cups": "BIO003",
+        "subcategoria": "BIOESTIMULADORES",
+        "profesional": "Dra. Sofía Ramírez",
+        "valor": 600000
+      },
+      {
+        "fecha": "2025-08-15",
+        "cups": "TOX001",
+        "subcategoria": "INYECTABLES",
+        "profesional": "Dra. Sofía Ramírez",
+        "valor": 350000
+      }
+    ]
+  },
+  {
+    "doc": "1050607080",
+    "nombre": "María Fernanda Gómez",
+    "celular": "3003456789",
+    "edad": 37,
+    "procedencia": "Google",
+    "valor_total": 980000,
+    "visitas": 3,
+    "ultima": "2025-12-10",
+    "subcategorias": [
+      "RELLENOS"
+    ],
+    "profesional": "Dr. Carlos Vega",
+    "historial": [
+      {
+        "fecha": "2025-12-10",
+        "cups": "REL002",
+        "subcategoria": "RELLENOS",
+        "profesional": "Dr. Carlos Vega",
+        "valor": 800000
+      },
+      {
+        "fecha": "2025-07-20",
+        "cups": "REL002",
+        "subcategoria": "RELLENOS",
+        "profesional": "Dr. Carlos Vega",
+        "valor": 100000
+      },
+      {
+        "fecha": "2025-03-15",
+        "cups": "REL002",
+        "subcategoria": "RELLENOS",
+        "profesional": "Dr. Carlos Vega",
+        "valor": 80000
+      }
+    ]
+  },
+  {
+    "doc": "1060708090",
+    "nombre": "Laura Jimena Castillo",
+    "celular": "3174567890",
+    "edad": 45,
+    "procedencia": "Referido",
+    "valor_total": 5600000,
+    "visitas": 18,
+    "ultima": "2026-03-28",
+    "subcategorias": [
+      "INYECTABLES",
+      "PRODEEP",
+      "RELLENOS"
+    ],
+    "profesional": "Dra. Sofía Ramírez",
+    "historial": [
+      {
+        "fecha": "2026-03-28",
+        "cups": "TOX001",
+        "subcategoria": "INYECTABLES",
+        "profesional": "Dra. Sofía Ramírez",
+        "valor": 350000
+      },
+      {
+        "fecha": "2026-02-14",
+        "cups": "REL002",
+        "subcategoria": "RELLENOS",
+        "profesional": "Dra. Sofía Ramírez",
+        "valor": 800000
+      },
+      {
+        "fecha": "2026-01-10",
+        "cups": "PRO004",
+        "subcategoria": "PRODEEP",
+        "profesional": "Dra. Sofía Ramírez",
+        "valor": 450000
+      },
+      {
+        "fecha": "2025-11-20",
+        "cups": "TOX001",
+        "subcategoria": "INYECTABLES",
+        "profesional": "Dra. Sofía Ramírez",
+        "valor": 350000
+      },
+      {
+        "fecha": "2025-09-15",
+        "cups": "REL002",
+        "subcategoria": "RELLENOS",
+        "profesional": "Dra. Sofía Ramírez",
+        "valor": 800000
+      },
+      {
+        "fecha": "2025-07-08",
+        "cups": "TOX001",
+        "subcategoria": "INYECTABLES",
+        "profesional": "Dra. Sofía Ramírez",
+        "valor": 350000
+      }
+    ]
+  },
+  {
+    "doc": "1070809010",
+    "nombre": "Sara Eugenia Vargas",
+    "celular": "3125678901",
+    "edad": 31,
+    "procedencia": "Instagram",
+    "valor_total": 760000,
+    "visitas": 2,
+    "ultima": "2025-11-05",
+    "subcategorias": [
+      "BIOESTIMULADORES"
+    ],
+    "profesional": "Dra. Sofía Ramírez",
+    "historial": [
+      {
+        "fecha": "2025-11-05",
+        "cups": "BIO003",
+        "subcategoria": "BIOESTIMULADORES",
+        "profesional": "Dra. Sofía Ramírez",
+        "valor": 600000
+      },
+      {
+        "fecha": "2025-06-20",
+        "cups": "BIO003",
+        "subcategoria": "BIOESTIMULADORES",
+        "profesional": "Dra. Sofía Ramírez",
+        "valor": 160000
+      }
+    ]
+  },
+  {
+    "doc": "1080900020",
+    "nombre": "Daniela Quintero Mejía",
+    "celular": "3016789012",
+    "edad": 26,
+    "procedencia": "Facebook",
+    "valor_total": 1900000,
+    "visitas": 6,
+    "ultima": "2026-03-05",
+    "subcategorias": [
+      "INYECTABLES"
+    ],
+    "profesional": "Dr. Carlos Vega",
+    "historial": [
+      {
+        "fecha": "2026-03-05",
+        "cups": "TOX001",
+        "subcategoria": "INYECTABLES",
+        "profesional": "Dr. Carlos Vega",
+        "valor": 350000
+      },
+      {
+        "fecha": "2025-12-18",
+        "cups": "TOX001",
+        "subcategoria": "INYECTABLES",
+        "profesional": "Dr. Carlos Vega",
+        "valor": 350000
+      },
+      {
+        "fecha": "2025-09-22",
+        "cups": "TOX001",
+        "subcategoria": "INYECTABLES",
+        "profesional": "Dr. Carlos Vega",
+        "valor": 350000
+      },
+      {
+        "fecha": "2025-06-10",
+        "cups": "TOX001",
+        "subcategoria": "INYECTABLES",
+        "profesional": "Dr. Carlos Vega",
+        "valor": 350000
+      },
+      {
+        "fecha": "2025-03-05",
+        "cups": "TOX001",
+        "subcategoria": "INYECTABLES",
+        "profesional": "Dr. Carlos Vega",
+        "valor": 350000
+      },
+      {
+        "fecha": "2024-12-01",
+        "cups": "TOX001",
+        "subcategoria": "INYECTABLES",
+        "profesional": "Dr. Carlos Vega",
+        "valor": 150000
+      }
+    ]
+  },
+  {
+    "doc": "1090001030",
+    "nombre": "Natalia Ospina Arango",
+    "celular": "3187890123",
+    "edad": 39,
+    "procedencia": "Referido",
+    "valor_total": 4100000,
+    "visitas": 13,
+    "ultima": "2026-04-02",
+    "subcategorias": [
+      "RELLENOS",
+      "BIOESTIMULADORES"
+    ],
+    "profesional": "Dra. Sofía Ramírez",
+    "historial": [
+      {
+        "fecha": "2026-04-02",
+        "cups": "REL002",
+        "subcategoria": "RELLENOS",
+        "profesional": "Dra. Sofía Ramírez",
+        "valor": 800000
+      },
+      {
+        "fecha": "2026-02-18",
+        "cups": "BIO003",
+        "subcategoria": "BIOESTIMULADORES",
+        "profesional": "Dra. Sofía Ramírez",
+        "valor": 600000
+      },
+      {
+        "fecha": "2025-12-10",
+        "cups": "REL002",
+        "subcategoria": "RELLENOS",
+        "profesional": "Dra. Sofía Ramírez",
+        "valor": 800000
+      },
+      {
+        "fecha": "2025-10-05",
+        "cups": "BIO003",
+        "subcategoria": "BIOESTIMULADORES",
+        "profesional": "Dra. Sofía Ramírez",
+        "valor": 600000
+      },
+      {
+        "fecha": "2025-07-22",
+        "cups": "REL002",
+        "subcategoria": "RELLENOS",
+        "profesional": "Dra. Sofía Ramírez",
+        "valor": 800000
+      }
+    ]
+  },
+  {
+    "doc": "1100102040",
+    "nombre": "Juliana Peña Morales",
+    "celular": "3048901234",
+    "edad": 33,
+    "procedencia": "Google",
+    "valor_total": 620000,
+    "visitas": 2,
+    "ultima": "2025-10-18",
+    "subcategorias": [
+      "PRODEEP"
+    ],
+    "profesional": "Dr. Carlos Vega",
+    "historial": [
+      {
+        "fecha": "2025-10-18",
+        "cups": "PRO004",
+        "subcategoria": "PRODEEP",
+        "profesional": "Dr. Carlos Vega",
+        "valor": 450000
+      },
+      {
+        "fecha": "2025-05-10",
+        "cups": "PRO004",
+        "subcategoria": "PRODEEP",
+        "profesional": "Dr. Carlos Vega",
+        "valor": 170000
+      }
+    ]
+  },
+  {
+    "doc": "1110203050",
+    "nombre": "Camila Salcedo Díaz",
+    "celular": "3199012345",
+    "edad": 29,
+    "procedencia": "Referido",
+    "valor_total": 2300000,
+    "visitas": 7,
+    "ultima": "2026-02-14",
+    "subcategorias": [
+      "INYECTABLES",
+      "RELLENOS"
+    ],
+    "profesional": "Dra. Sofía Ramírez",
+    "historial": [
+      {
+        "fecha": "2026-02-14",
+        "cups": "TOX001",
+        "subcategoria": "INYECTABLES",
+        "profesional": "Dra. Sofía Ramírez",
+        "valor": 350000
+      },
+      {
+        "fecha": "2025-11-28",
+        "cups": "REL002",
+        "subcategoria": "RELLENOS",
+        "profesional": "Dra. Sofía Ramírez",
+        "valor": 800000
+      },
+      {
+        "fecha": "2025-08-20",
+        "cups": "TOX001",
+        "subcategoria": "INYECTABLES",
+        "profesional": "Dra. Sofía Ramírez",
+        "valor": 350000
+      },
+      {
+        "fecha": "2025-05-15",
+        "cups": "REL002",
+        "subcategoria": "RELLENOS",
+        "profesional": "Dra. Sofía Ramírez",
+        "valor": 800000
+      }
+    ]
+  },
+  {
+    "doc": "1120304060",
+    "nombre": "Patricia Londoño Castro",
+    "celular": "3050123456",
+    "edad": 52,
+    "procedencia": "Referido",
+    "valor_total": 6800000,
+    "visitas": 22,
+    "ultima": "2026-03-20",
+    "subcategorias": [
+      "INYECTABLES",
+      "PRODEEP",
+      "BIOESTIMULADORES"
+    ],
+    "profesional": "Dr. Carlos Vega",
+    "historial": [
+      {
+        "fecha": "2026-03-20",
+        "cups": "TOX001",
+        "subcategoria": "INYECTABLES",
+        "profesional": "Dr. Carlos Vega",
+        "valor": 350000
+      },
+      {
+        "fecha": "2026-02-05",
+        "cups": "BIO003",
+        "subcategoria": "BIOESTIMULADORES",
+        "profesional": "Dr. Carlos Vega",
+        "valor": 600000
+      },
+      {
+        "fecha": "2026-01-15",
+        "cups": "PRO004",
+        "subcategoria": "PRODEEP",
+        "profesional": "Dr. Carlos Vega",
+        "valor": 450000
+      },
+      {
+        "fecha": "2025-11-10",
+        "cups": "TOX001",
+        "subcategoria": "INYECTABLES",
+        "profesional": "Dr. Carlos Vega",
+        "valor": 350000
+      },
+      {
+        "fecha": "2025-09-25",
+        "cups": "BIO003",
+        "subcategoria": "BIOESTIMULADORES",
+        "profesional": "Dr. Carlos Vega",
+        "valor": 600000
+      },
+      {
+        "fecha": "2025-08-01",
+        "cups": "TOX001",
+        "subcategoria": "INYECTABLES",
+        "profesional": "Dr. Carlos Vega",
+        "valor": 350000
+      }
+    ]
+  },
+  {
+    "doc": "1130405070",
+    "nombre": "Ana Lucía Bermúdez",
+    "celular": "3161234567",
+    "edad": 44,
+    "procedencia": "Instagram",
+    "valor_total": 1100000,
+    "visitas": 4,
+    "ultima": "2026-01-30",
+    "subcategorias": [
+      "RELLENOS"
+    ],
+    "profesional": "Dra. Sofía Ramírez",
+    "historial": [
+      {
+        "fecha": "2026-01-30",
+        "cups": "REL002",
+        "subcategoria": "RELLENOS",
+        "profesional": "Dra. Sofía Ramírez",
+        "valor": 800000
+      },
+      {
+        "fecha": "2025-07-12",
+        "cups": "REL002",
+        "subcategoria": "RELLENOS",
+        "profesional": "Dra. Sofía Ramírez",
+        "valor": 200000
+      },
+      {
+        "fecha": "2025-02-18",
+        "cups": "REL002",
+        "subcategoria": "RELLENOS",
+        "profesional": "Dra. Sofía Ramírez",
+        "valor": 100000
+      }
+    ]
+  },
+  {
+    "doc": "1140506080",
+    "nombre": "Gloria Inés Restrepo",
+    "celular": "3002345678",
+    "edad": 58,
+    "procedencia": "Referido",
+    "valor_total": 3750000,
+    "visitas": 12,
+    "ultima": "2026-03-10",
+    "subcategorias": [
+      "INYECTABLES",
+      "BIOESTIMULADORES"
+    ],
+    "profesional": "Dr. Carlos Vega",
+    "historial": [
+      {
+        "fecha": "2026-03-10",
+        "cups": "TOX001",
+        "subcategoria": "INYECTABLES",
+        "profesional": "Dr. Carlos Vega",
+        "valor": 350000
+      },
+      {
+        "fecha": "2026-01-22",
+        "cups": "BIO003",
+        "subcategoria": "BIOESTIMULADORES",
+        "profesional": "Dr. Carlos Vega",
+        "valor": 600000
+      },
+      {
+        "fecha": "2025-11-05",
+        "cups": "TOX001",
+        "subcategoria": "INYECTABLES",
+        "profesional": "Dr. Carlos Vega",
+        "valor": 350000
+      },
+      {
+        "fecha": "2025-08-20",
+        "cups": "BIO003",
+        "subcategoria": "BIOESTIMULADORES",
+        "profesional": "Dr. Carlos Vega",
+        "valor": 600000
+      },
+      {
+        "fecha": "2025-05-14",
+        "cups": "TOX001",
+        "subcategoria": "INYECTABLES",
+        "profesional": "Dr. Carlos Vega",
+        "valor": 350000
+      }
+    ]
+  },
+  {
+    "doc": "1150607090",
+    "nombre": "Marcela Duque Agudelo",
+    "celular": "3173456789",
+    "edad": 36,
+    "procedencia": "Google",
+    "valor_total": 850000,
+    "visitas": 3,
+    "ultima": "2025-12-22",
+    "subcategorias": [
+      "PRODEEP"
+    ],
+    "profesional": "Dra. Sofía Ramírez",
+    "historial": [
+      {
+        "fecha": "2025-12-22",
+        "cups": "PRO004",
+        "subcategoria": "PRODEEP",
+        "profesional": "Dra. Sofía Ramírez",
+        "valor": 450000
+      },
+      {
+        "fecha": "2025-08-14",
+        "cups": "PRO004",
+        "subcategoria": "PRODEEP",
+        "profesional": "Dra. Sofía Ramírez",
+        "valor": 300000
+      },
+      {
+        "fecha": "2025-04-05",
+        "cups": "PRO004",
+        "subcategoria": "PRODEEP",
+        "profesional": "Dra. Sofía Ramírez",
+        "valor": 100000
+      }
+    ]
+  },
+  {
+    "doc": "1160708000",
+    "nombre": "Carolina Henao Vélez",
+    "celular": "3124567890",
+    "edad": 30,
+    "procedencia": "Facebook",
+    "valor_total": 2050000,
+    "visitas": 7,
+    "ultima": "2026-03-18",
+    "subcategorias": [
+      "INYECTABLES"
+    ],
+    "profesional": "Dr. Carlos Vega",
+    "historial": [
+      {
+        "fecha": "2026-03-18",
+        "cups": "TOX001",
+        "subcategoria": "INYECTABLES",
+        "profesional": "Dr. Carlos Vega",
+        "valor": 350000
+      },
+      {
+        "fecha": "2025-12-01",
+        "cups": "TOX001",
+        "subcategoria": "INYECTABLES",
+        "profesional": "Dr. Carlos Vega",
+        "valor": 350000
+      },
+      {
+        "fecha": "2025-09-10",
+        "cups": "TOX001",
+        "subcategoria": "INYECTABLES",
+        "profesional": "Dr. Carlos Vega",
+        "valor": 350000
+      },
+      {
+        "fecha": "2025-06-25",
+        "cups": "TOX001",
+        "subcategoria": "INYECTABLES",
+        "profesional": "Dr. Carlos Vega",
+        "valor": 350000
+      },
+      {
+        "fecha": "2025-03-12",
+        "cups": "TOX001",
+        "subcategoria": "INYECTABLES",
+        "profesional": "Dr. Carlos Vega",
+        "valor": 350000
+      },
+      {
+        "fecha": "2024-12-20",
+        "cups": "TOX001",
+        "subcategoria": "INYECTABLES",
+        "profesional": "Dr. Carlos Vega",
+        "valor": 200000
+      },
+      {
+        "fecha": "2024-09-05",
+        "cups": "TOX001",
+        "subcategoria": "INYECTABLES",
+        "profesional": "Dr. Carlos Vega",
+        "valor": 100000
+      }
+    ]
+  }
+]

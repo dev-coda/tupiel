@@ -1,0 +1,111 @@
+<div class="ip-root ip-app">
+  <div class="ip-app__shell">
+    <aside class="ip-app__sidebar">
+      <div class="ip-app__brand">
+        <span class="ip-app__brand-mark">TP</span>
+        <div class="ip-app__brand-text">
+          <div class="ip-app__brand-title">Inteligencia</div>
+          <div class="ip-app__brand-sub">de Pacientes</div>
+        </div>
+      </div>
+
+      <nav class="ip-app__nav">
+        @for (item of navItems(); track item.id) {
+          <button
+            type="button"
+            class="ip-app__nav-item"
+            [class.ip-app__nav-item--active]="st.activeView() === item.id"
+            (click)="go(item.id)"
+          >
+            <span class="ip-app__nav-icon">{{ item.icon }}</span>
+            <span class="ip-app__nav-label">{{ item.label }}</span>
+          </button>
+        }
+      </nav>
+
+      <div class="ip-app__sidebar-foot">
+        @if (st.user(); as u) {
+          <div class="ip-app__user">
+            <div class="ip-app__user-avatar">{{ u.avatar }}</div>
+            <div class="ip-app__user-meta">
+              <div class="ip-app__user-name">{{ u.nombre }}</div>
+              <div class="ip-app__user-role">{{ u.cargo }}</div>
+            </div>
+          </div>
+        }
+        @if (st.user()?.rol === 'admin') {
+          <div class="ip-app__demo-zone">
+            <button
+              type="button"
+              class="ip-app__demo-purge"
+              [disabled]="demoPurgeBusy()"
+              (click)="purgeDemoData()"
+            >
+              {{ demoPurgeBusy() ? 'Eliminando demo…' : 'Eliminar datos demo' }}
+            </button>
+            @if (demoPurgeMsg(); as m) {
+              <div class="ip-app__demo-hint ip-app__demo-hint--ok">{{ m }}</div>
+            }
+            @if (demoPurgeErr(); as er) {
+              <div class="ip-app__demo-hint ip-app__demo-hint--err" role="alert">{{ er }}</div>
+            }
+          </div>
+        }
+        <a routerLink="/ppto" class="ip-app__back">← Volver al dashboard</a>
+      </div>
+    </aside>
+
+    <main class="ip-app__main">
+      <header class="ip-app__topbar">
+        <div class="ip-app__topbar-start">
+          <span class="ip-app__date">{{ todayStr }}</span>
+          <label class="ip-app__ym">
+            <span class="ip-app__ym-lbl">Mes métricas</span>
+            <input
+              type="month"
+              [value]="st.metricsYm()"
+              (change)="st.setMetricsYm($any($event.target).value)"
+            />
+          </label>
+        </div>
+        <div class="ip-app__topbar-end">
+          <span class="ip-app__status-dot" aria-hidden="true"></span>
+          <span class="ip-app__status-txt">Sistema activo</span>
+          @if (st.user(); as u) {
+            <span class="ip-app__chip" [class.ip-app__chip--admin]="u.rol === 'admin'">
+              <span class="ip-app__chip-av">{{ u.avatar }}</span>
+              {{ u.nombre }}
+              <span class="ip-app__chip-role">{{ u.rol }}</span>
+            </span>
+          }
+        </div>
+      </header>
+      @switch (st.activeView()) {
+        @case ('pacientes') {
+          <app-ip-pacientes />
+        }
+        @case ('agenda') {
+          <app-ip-agenda />
+        }
+        @case ('alertas') {
+          <app-ip-alertas />
+        }
+        @case ('tareas') {
+          <app-ip-tareas-gestion />
+        }
+        @case ('actividades') {
+          <app-ip-actividades />
+        }
+        @case ('reportes') {
+          <app-ip-reportes />
+        }
+        @case ('metas') {
+          <app-ip-metas />
+        }
+        @case ('usuarios') {
+          <app-ip-usuarios />
+        }
+      }
+    </main>
+  </div>
+</div>

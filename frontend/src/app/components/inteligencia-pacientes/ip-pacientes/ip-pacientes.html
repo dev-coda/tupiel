@@ -1,0 +1,391 @@
+<div class="ip-pacientes">
+  <div class="ip-pacientes__main">
+    <div class="ip-pacientes__stats">
+      <div class="ip-pacientes__stat-col">
+        <div class="ip-pacientes__stat-lbl">PACIENTES</div>
+        <div class="ip-pacientes__stat-val">{{ stats().total }}</div>
+        <div class="ip-pacientes__stat-sub">únicos (lista filtrada)</div>
+        <app-ip-goal-progress metricKey="pacientes_total" [actual]="stats().total" format="int" />
+      </div>
+      <div class="ip-pacientes__vsep"></div>
+      <div class="ip-pacientes__stat-col">
+        <div class="ip-pacientes__stat-lbl">VALOR TOTAL</div>
+        <div class="ip-pacientes__stat-val">{{ fM(stats().valor) }}</div>
+        <div class="ip-pacientes__stat-sub">acumulado</div>
+        <app-ip-goal-progress metricKey="pacientes_valor" [actual]="stats().valor" format="money" />
+      </div>
+      <div class="ip-pacientes__vsep"></div>
+      <div class="ip-pacientes__stat-col">
+        <div class="ip-pacientes__stat-lbl">PROM. VISITAS</div>
+        <div class="ip-pacientes__stat-val">{{ stats().visitas }}</div>
+        <div class="ip-pacientes__stat-sub">por paciente</div>
+        <app-ip-goal-progress metricKey="pacientes_prom_visitas" [actual]="stats().visitas" format="int" />
+      </div>
+    </div>
+
+    <app-ip-medifony-sync-panel [context]="'pacientes'" class="ip-pacientes__mfs" />
+
+    <div class="ip-pacientes__filters">
+      <input
+        #pacExcelInp
+        type="file"
+        accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        class="ip-pacientes__file"
+        (change)="onImportPacientes($event)"
+      />
+      <button
+        type="button"
+        class="ip-pacientes__import"
+        [disabled]="importing()"
+        (click)="pacExcelInp.click()"
+        title="Importar desde Excel (.xlsx). Columnas: Documento, Nombre, Celular, Edad, Procedencia, Valor total, Visitas, Última, Subcategorías, Profesional"
+      >
+        {{ importing() ? '…' : 'Importar Excel' }}
+      </button>
+
+      <input
+        class="ip-pacientes__search"
+        placeholder="🔍  Buscar por nombre, cédula o celular..."
+        [ngModel]="search()"
+        (ngModelChange)="search.set($event); page.set(1)"
+      />
+      <div class="ip-pacientes__fld">
+        <label>Servicio</label>
+        <select
+          [ngModel]="subcat()"
+          (ngModelChange)="subcat.set($event); page.set(1)"
+          [class.ip-pacientes__sel--on]="subcat() !== 'Todas'"
+        >
+          @for (s of subcats; track s) {
+            <option [value]="s">{{ s }}</option>
+          }
+        </select>
+      </div>
+      <div class="ip-pacientes__fld">
+        <label>Profesional</label>
+        <select
+          [ngModel]="profesional()"
+          (ngModelChange)="profesional.set($event); page.set(1)"
+          [class.ip-pacientes__sel--prof]="profesional() !== 'Todos'"
+        >
+          @for (p of profesionales(); track p) {
+            <option [value]="p">{{ p }}</option>
+          }
+        </select>
+      </div>
+      <span class="ip-pacientes__count"
+        >{{ filtered().length }} resultado{{ filtered().length !== 1 ? 's' : '' }}</span
+      >
+    </div>
+
+    <div class="ip-pacientes__table-wrap">
+      <table class="ip-pacientes__table">
+        <thead>
+          <tr>
+            <th (click)="handleSort('nombre')">
+              Paciente
+              @if (sortCol() !== 'nombre') {
+                <span class="ip-pacientes__sort">↕</span>
+              }
+              @if (sortCol() === 'nombre') {
+                <span class="ip-pacientes__sort ip-pacientes__sort--on">{{
+                  sortDir() === 'asc' ? '↑' : '↓'
+                }}</span>
+              }
+            </th>
+            <th (click)="handleSort('doc')">
+              Documento
+              @if (sortCol() !== 'doc') {
+                <span class="ip-pacientes__sort">↕</span>
+              }
+              @if (sortCol() === 'doc') {
+                <span class="ip-pacientes__sort ip-pacientes__sort--on">{{
+                  sortDir() === 'asc' ? '↑' : '↓'
+                }}</span>
+              }
+            </th>
+            <th (click)="handleSort('celular')">
+              Celular
+              @if (sortCol() !== 'celular') {
+                <span class="ip-pacientes__sort">↕</span>
+              }
+              @if (sortCol() === 'celular') {
+                <span class="ip-pacientes__sort ip-pacientes__sort--on">{{
+                  sortDir() === 'asc' ? '↑' : '↓'
+                }}</span>
+              }
+            </th>
+            <th (click)="handleSort('subcategorias')">
+              Servicios
+              @if (sortCol() !== 'subcategorias') {
+                <span class="ip-pacientes__sort">↕</span>
+              }
+              @if (sortCol() === 'subcategorias') {
+                <span class="ip-pacientes__sort ip-pacientes__sort--on">{{
+                  sortDir() === 'asc' ? '↑' : '↓'
+                }}</span>
+              }
+            </th>
+            <th (click)="handleSort('profesional')">
+              Profesional
+              @if (sortCol() !== 'profesional') {
+                <span class="ip-pacientes__sort">↕</span>
+              }
+              @if (sortCol() === 'profesional') {
+                <span class="ip-pacientes__sort ip-pacientes__sort--on">{{
+                  sortDir() === 'asc' ? '↑' : '↓'
+                }}</span>
+              }
+            </th>
+            <th (click)="handleSort('visitas')">
+              Visitas
+              @if (sortCol() !== 'visitas') {
+                <span class="ip-pacientes__sort">↕</span>
+              }
+              @if (sortCol() === 'visitas') {
+                <span class="ip-pacientes__sort ip-pacientes__sort--on">{{
+                  sortDir() === 'asc' ? '↑' : '↓'
+                }}</span>
+              }
+            </th>
+            <th (click)="handleSort('valor_total')">
+              Valor Total
+              @if (sortCol() !== 'valor_total') {
+                <span class="ip-pacientes__sort">↕</span>
+              }
+              @if (sortCol() === 'valor_total') {
+                <span class="ip-pacientes__sort ip-pacientes__sort--on">{{
+                  sortDir() === 'asc' ? '↑' : '↓'
+                }}</span>
+              }
+            </th>
+            <th (click)="handleSort('ultima')">
+              Última Visita
+              @if (sortCol() !== 'ultima') {
+                <span class="ip-pacientes__sort">↕</span>
+              }
+              @if (sortCol() === 'ultima') {
+                <span class="ip-pacientes__sort ip-pacientes__sort--on">{{
+                  sortDir() === 'asc' ? '↑' : '↓'
+                }}</span>
+              }
+            </th>
+            <th (click)="handleSort('gestion')">
+              Gestión
+              @if (sortCol() !== 'gestion') {
+                <span class="ip-pacientes__sort">↕</span>
+              }
+              @if (sortCol() === 'gestion') {
+                <span class="ip-pacientes__sort ip-pacientes__sort--on">{{
+                  sortDir() === 'asc' ? '↑' : '↓'
+                }}</span>
+              }
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (paginated().length === 0) {
+            <tr>
+              <td colspan="9" class="ip-pacientes__empty">Sin resultados</td>
+            </tr>
+          } @else {
+            @for (p of paginated(); track p.doc; let i = $index) {
+              <tr
+                (click)="toggleSelect(p)"
+                [class.ip-pacientes__tr--sel]="selected()?.doc === p.doc"
+                [class.ip-pacientes__tr--stripe]="i % 2 === 1"
+              >
+                <td>
+                  <div class="ip-pacientes__namecell">
+                    <div class="ip-pacientes__avatar">{{ ini(p.nombre) }}</div>
+                    <div>
+                      <div class="ip-pacientes__nm">{{ p.nombre }}</div>
+                      <div class="ip-pacientes__meta">{{ p.edad }} años · {{ p.procedencia }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="ip-pacientes__mono">{{ p.doc }}</td>
+                <td class="ip-pacientes__mono">{{ p.celular }}</td>
+                <td>
+                  <div class="ip-pacientes__tags">
+                    @for (s of p.subcategorias; track s) {
+                      <span class="ip-pacientes__tag-svc">{{ s }}</span>
+                    }
+                  </div>
+                </td>
+                <td>{{ p.profesional }}</td>
+                <td class="ip-pacientes__tc">{{ p.visitas }}</td>
+                <td>{{ fM(p.valor_total) }}</td>
+                <td>
+                  <div>{{ fD(p.ultima) }}</div>
+                  <div class="ip-pacientes__dias" [style.color]="diasColor(diasDesde(p.ultima))">
+                    hace {{ diasDesde(p.ultima) }} días
+                  </div>
+                </td>
+                <td>
+                  @if (st.fichas()[p.doc]; as g) {
+                    <span
+                      class="ip-pacientes__badge"
+                      [style.background]="estadoCfg[g.estado].bg"
+                      [style.color]="estadoCfg[g.estado].color"
+                      >{{ estadoCfg[g.estado].label }}</span
+                    >
+                  } @else {
+                    <span class="ip-pacientes__dash">—</span>
+                  }
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (totalPages() > 1) {
+      <div class="ip-pacientes__pager">
+        <button
+          type="button"
+          [disabled]="page() === 1"
+          (click)="page.set(Math.max(1, page() - 1))"
+        >
+          ‹
+        </button>
+        @for (n of pageNums(); track n) {
+          <button
+            type="button"
+            [class.ip-pacientes__pg--on]="page() === n"
+            (click)="page.set(n)"
+          >
+            {{ n }}
+          </button>
+        }
+        <button
+          type="button"
+          [disabled]="page() === totalPages()"
+          (click)="page.set(Math.min(totalPages(), page() + 1))"
+        >
+          ›
+        </button>
+      </div>
+    }
+  </div>
+
+  @if (selected(); as sel) {
+    <aside class="ip-pacientes__aside">
+      <div class="ip-pacientes__aside-head">
+        <div class="ip-pacientes__aside-title">
+          <div class="ip-pacientes__aside-av">{{ ini(sel.nombre) }}</div>
+          <div>
+            <div class="ip-pacientes__aside-nm">{{ sel.nombre }}</div>
+            <div class="ip-pacientes__aside-doc">{{ sel.doc }}</div>
+          </div>
+        </div>
+        <button type="button" class="ip-pacientes__aside-x" (click)="selected.set(null)">×</button>
+      </div>
+
+      <div class="ip-pacientes__aside-block">
+        <div class="ip-pacientes__aside-lbl">Celular — clic para copiar</div>
+        <button
+          type="button"
+          class="ip-pacientes__copy"
+          [class.ip-pacientes__copy--ok]="copiedCel()"
+          (click)="copyCelular($event, sel.celular)"
+        >
+          <span>{{ copiedCel() ? '✓' : '📋' }}</span>
+          {{ copiedCel() ? 'Copiado!' : sel.celular }}
+        </button>
+      </div>
+
+      <div class="ip-pacientes__grid2">
+        @for (
+          row of [
+            { label: 'Edad', val: sel.edad + ' años' },
+            { label: 'Procedencia', val: sel.procedencia },
+            { label: 'Profesional', val: sel.profesional },
+            { label: 'Visitas', val: sel.visitas },
+            {
+              label: 'Primera Visita',
+              val: sel.historial?.length ? fD(sel.historial[sel.historial.length - 1].fecha) : '—',
+            },
+            { label: 'Última Visita', val: fD(sel.ultima) },
+            { label: 'Valor Total', val: fM(sel.valor_total) },
+          ];
+          track row.label
+        ) {
+          <div class="ip-pacientes__cell">
+            <div class="ip-pacientes__aside-lbl">{{ row.label }}</div>
+            <div class="ip-pacientes__cell-val">{{ row.val }}</div>
+          </div>
+        }
+      </div>
+
+      <div class="ip-pacientes__aside-block">
+        <div class="ip-pacientes__aside-h">Servicios</div>
+        <div class="ip-pacientes__tags">
+          @for (s of sel.subcategorias; track s) {
+            <span class="ip-pacientes__tag-purp">{{ s }}</span>
+          }
+        </div>
+      </div>
+
+      @if (sel.historial?.length) {
+        <div class="ip-pacientes__aside-block">
+          <div class="ip-pacientes__aside-h">Historial de Citas</div>
+          <div class="ip-pacientes__hist">
+            @for (h of sel.historial; track $index) {
+              <div class="ip-pacientes__hist-row">
+                <div class="ip-pacientes__hist-l">
+                  <div class="ip-pacientes__hist-d">{{ fD(h.fecha) }}</div>
+                  <div class="ip-pacientes__hist-s">
+                    {{ h.subcategoria }} · {{ h.profesional.replace('Dra. ', '').replace('Dr. ', '') }}
+                  </div>
+                </div>
+                <div class="ip-pacientes__hist-v">{{ fM(h.valor) }}</div>
+              </div>
+            }
+          </div>
+          <div class="ip-pacientes__hist-tot">
+            <span>Total acumulado</span>
+            <span>{{ fM(sel.valor_total) }}</span>
+          </div>
+        </div>
+      }
+
+      <div class="ip-pacientes__gestion">
+        @if (st.fichas()[sel.doc]; as fc) {
+          <div class="ip-pacientes__gestion-row">
+            <div class="ip-pacientes__aside-lbl">Estado Gestión</div>
+            <div class="ip-pacientes__gestion-inner">
+              <span
+                class="ip-pacientes__badge"
+                [style.background]="estadoCfg[fc.estado].bg"
+                [style.color]="estadoCfg[fc.estado].color"
+                >{{ estadoCfg[fc.estado].label }}</span
+              >
+              <span class="ip-pacientes__nota-snippet">{{
+                fc.notas?.slice(0, 30)
+              }}{{ fc.notas && fc.notas.length > 30 ? '…' : '' }}</span>
+            </div>
+          </div>
+        }
+        <button
+          type="button"
+          class="ip-pacientes__btn-ficha"
+          [class.ip-pacientes__btn-ficha--fill]="!st.fichas()[sel.doc]"
+          (click)="fichaModal.set(sel)"
+        >
+          {{ st.fichas()[sel.doc] ? 'Editar Gestión Comercial' : '+ Crear Ficha de Gestión' }}
+        </button>
+      </div>
+    </aside>
+  }
+</div>
+
+@if (fichaModal(); as fm) {
+  <app-ip-modal-ficha
+    [pac]="fm"
+    [origen]="'Inteligencia de Pacientes'"
+    [onCrearTarea]="true"
+    (close)="fichaModal.set(null)"
+  />
+}

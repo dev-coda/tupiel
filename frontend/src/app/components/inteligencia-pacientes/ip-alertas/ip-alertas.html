@@ -1,0 +1,832 @@
+<div class="ip-alertas">
+  <!-- A1 -->
+  <div
+    class="ip-alertas__block"
+    [class.ip-alertas__block--dim]="refreshing()['a1']"
+  >
+    <div class="ip-alertas__head">
+      <button type="button" class="ip-alertas__head-main" (click)="toggle('a1')">
+        <div class="ip-alertas__icon ip-alertas__icon--a1">🔴</div>
+        <div class="ip-alertas__head-text">
+          <div class="ip-alertas__title">Pacientes Dormidos</div>
+          <div class="ip-alertas__sub">Sin visita hace más de 60 días</div>
+        </div>
+        <span class="ip-alertas__count ip-alertas__count--a1"
+          >{{ a1().length
+          }}@if (a1().length !== a1base().length) {
+            <span> / {{ a1base().length }}</span>
+          }</span
+        >
+        <span class="ip-alertas__chev">{{ open()['a1'] ? '▲' : '▼' }}</span>
+      </button>
+      <button
+        type="button"
+        class="ip-alertas__refresh"
+        [disabled]="refreshing()['a1']"
+        (click)="handleRefresh('a1'); $event.stopPropagation()"
+      >
+        {{ refreshing()['a1'] ? '↻ Actualizando…' : '↻ Actualizar' }}
+      </button>
+    </div>
+    <div class="ip-alertas__goalstrip">
+      <app-ip-goal-progress metricKey="alertas_a1" [actual]="a1().length" format="int" />
+    </div>
+    @if (open()['a1']) {
+      <div class="ip-alertas__filtros">
+        <div class="ip-alertas__fld">
+          <label>Días mínimos</label>
+          <input
+            type="number"
+            [ngModel]="f1().dias"
+            (ngModelChange)="f1.set({ ...f1(), dias: $event })"
+            placeholder="≥ 60"
+          />
+        </div>
+        <div class="ip-alertas__fld">
+          <label>Valor mínimo</label>
+          <input
+            type="number"
+            [ngModel]="f1().valorMin"
+            (ngModelChange)="f1.set({ ...f1(), valorMin: $event })"
+            placeholder="Ej: 500000"
+          />
+        </div>
+        <div class="ip-alertas__fld">
+          <label>Profesional</label>
+          <select
+            [ngModel]="f1().profesional"
+            (ngModelChange)="f1.set({ ...f1(), profesional: $event })"
+          >
+            @for (p of profesionales(); track p) {
+              <option [value]="p">{{ p }}</option>
+            }
+          </select>
+        </div>
+      </div>
+      @if (a1().length === 0) {
+        <div class="ip-alertas__empty">Sin resultados para los filtros seleccionados</div>
+      } @else {
+        <div class="ip-alertas__table-wrap">
+          <table class="ip-alertas__table">
+            <thead>
+              <tr>
+                <th>Paciente</th>
+                <th>Valor Total</th>
+                <th>Última Visita</th>
+                <th>Días</th>
+                <th>Gestión</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of a1(); track p.doc + '-' + $index) {
+                @let ek = expandKey('a1', p.doc, $index);
+                <tr
+                  class="ip-alertas__row"
+                  [class.ip-alertas__row--no-border]="isExpanded(ek)"
+                  (click)="toggleExpand(ek)"
+                >
+                  <td>
+                    <div class="ip-alertas__pac">
+                      <div
+                        class="ip-alertas__av"
+                        [style.background]="'rgba(214,48,49,.1)'"
+                        [style.color]="'#d63031'"
+                      >
+                        {{ ini(p.nombre) }}
+                      </div>
+                      <div>
+                        <div class="ip-alertas__pac-name">
+                          {{ p.nombre }}
+                          <span class="ip-alertas__exp-ic">{{ isExpanded(ek) ? '▲' : '▼' }}</span>
+                        </div>
+                        <div class="ip-alertas__pac-cel">{{ p.celular }}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><strong>{{ fM(p.valor_total) }}</strong></td>
+                  <td>{{ fD(p.ultima) }}</td>
+                  <td><span class="ip-alertas__dias-a1">{{ p.dias }} días</span></td>
+                  <td (click)="$event.stopPropagation(); abrirFicha(p, 'A1 · Pacientes Dormidos')">
+                    @if (st.fichas()[p.doc]; as fi) {
+                      <span class="ip-alertas__badge-gest" [style.background]="estadoCfg[fi.estado]?.bg" [style.color]="estadoCfg[fi.estado]?.color" [style.border-color]="estadoCfg[fi.estado]?.color + '22'">{{ estadoCfg[fi.estado]?.label }}</span>
+                    } @else {
+                      <span class="ip-alertas__badge-gest ip-alertas__badge-gest--empty">+ Gestión</span>
+                    }
+                  </td>
+                </tr>
+                @if (isExpanded(ek)) {
+                  <tr class="ip-alertas__exp">
+                    <td colspan="5">
+                      <div class="ip-alertas__mini">
+                        <div class="ip-alertas__mini-grid">
+                          @for (
+                            row of [
+                              { l: 'Edad', v: p.edad ? p.edad + ' años' : '—' },
+                              { l: 'Procedencia', v: p.procedencia || '—' },
+                              { l: 'Visitas', v: p.visitas },
+                              { l: 'Valor Total', v: fM(p.valor_total) },
+                              {
+                                l: 'Primera Visita',
+                                v: p.historial?.length ? fD(p.historial[p.historial.length - 1].fecha) : '—',
+                              },
+                              { l: 'Última Visita', v: fD(p.ultima) },
+                            ];
+                            track row.l
+                          ) {
+                            <div class="ip-alertas__mini-cell">
+                              <div class="ip-alertas__mini-l">{{ row.l }}</div>
+                              <div class="ip-alertas__mini-v">{{ row.v }}</div>
+                            </div>
+                          }
+                        </div>
+                        @if (p.historial && p.historial.length > 0) {
+                          <div class="ip-alertas__mini-hist">
+                            <div class="ip-alertas__mini-hist-t">Historial</div>
+                            @for (h of p.historial; track $index) {
+                              <div class="ip-alertas__mini-hist-row">
+                                <div>
+                                  <div class="ip-alertas__mini-hist-f">{{ fD(h.fecha) }}</div>
+                                  <div class="ip-alertas__mini-hist-s">{{ h.subcategoria }}</div>
+                                </div>
+                                <div class="ip-alertas__mini-hist-val">{{ fM(h.valor) }}</div>
+                              </div>
+                            }
+                          </div>
+                        }
+                        <div class="ip-alertas__mini-side">
+                          <div class="ip-alertas__mini-h">Contacto</div>
+                          <button
+                            type="button"
+                            class="ip-alertas__copy"
+                            [class.ip-alertas__copy--on]="copiedKey() === ek + '-cel'"
+                            (click)="$event.stopPropagation(); copiarCel(ek + '-cel', p.celular)"
+                          >
+                            {{ copiedKey() === ek + '-cel' ? '✓ Copiado' : '📋 ' + p.celular }}
+                          </button>
+                          @if (st.fichas()[p.doc]; as fi) {
+                            <div
+                              class="ip-alertas__mini-nota"
+                              [style.background]="estadoCfg[fi.estado]?.bg"
+                            >
+                              <div
+                                class="ip-alertas__mini-nota-l"
+                                [style.color]="estadoCfg[fi.estado]?.color"
+                              >
+                                {{ estadoCfg[fi.estado]?.label }}
+                              </div>
+                              @if (fi.notas) {
+                                <div class="ip-alertas__mini-nota-t">
+                                  {{ fi.notas.slice(0, 60) }}{{ fi.notas.length > 60 ? '…' : '' }}
+                                </div>
+                              }
+                            </div>
+                          }
+                          <button
+                            type="button"
+                            class="ip-alertas__mini-btn"
+                            (click)="$event.stopPropagation(); abrirFicha(p, 'A1 · Pacientes Dormidos')"
+                          >
+                            {{ st.fichas()[p.doc] ? 'Editar Gestión' : '+ Crear Ficha' }}
+                          </button>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    }
+  </div>
+
+  <!-- A2 -->
+  <div class="ip-alertas__block" [class.ip-alertas__block--dim]="refreshing()['a2']">
+    <div class="ip-alertas__head">
+      <button type="button" class="ip-alertas__head-main" (click)="toggle('a2')">
+        <div class="ip-alertas__icon ip-alertas__icon--a2">🟡</div>
+        <div class="ip-alertas__head-text">
+          <div class="ip-alertas__title">Oportunidades Cross-sell</div>
+          <div class="ip-alertas__sub">Servicios complementarios disponibles por historial</div>
+        </div>
+        <span class="ip-alertas__count ip-alertas__count--a2"
+          >{{ a2().length
+          }}@if (a2().length !== a2base().length) {
+            <span> / {{ a2base().length }}</span>
+          }</span
+        >
+        <span class="ip-alertas__chev">{{ open()['a2'] ? '▲' : '▼' }}</span>
+      </button>
+      <button
+        type="button"
+        class="ip-alertas__refresh"
+        [disabled]="refreshing()['a2']"
+        (click)="handleRefresh('a2'); $event.stopPropagation()"
+      >
+        {{ refreshing()['a2'] ? '↻ Actualizando…' : '↻ Actualizar' }}
+      </button>
+    </div>
+    <div class="ip-alertas__goalstrip">
+      <app-ip-goal-progress metricKey="alertas_a2" [actual]="a2().length" format="int" />
+    </div>
+    @if (open()['a2']) {
+      <div class="ip-alertas__filtros">
+        <div class="ip-alertas__fld">
+          <label>Días sin visita</label>
+          <input
+            type="number"
+            [ngModel]="f2().dias"
+            (ngModelChange)="f2.set({ ...f2(), dias: $event })"
+            placeholder="Ej: 30"
+          />
+        </div>
+        <div class="ip-alertas__fld">
+          <label>Valor mínimo</label>
+          <input
+            type="number"
+            [ngModel]="f2().valorMin"
+            (ngModelChange)="f2.set({ ...f2(), valorMin: $event })"
+            placeholder="Ej: 500000"
+          />
+        </div>
+        <div class="ip-alertas__fld">
+          <label>Profesional</label>
+          <select
+            [ngModel]="f2().profesional"
+            (ngModelChange)="f2.set({ ...f2(), profesional: $event })"
+          >
+            @for (p of profesionales(); track p) {
+              <option [value]="p">{{ p }}</option>
+            }
+          </select>
+        </div>
+      </div>
+      @if (a2().length === 0) {
+        <div class="ip-alertas__empty">Sin resultados para los filtros seleccionados</div>
+      } @else {
+        <div class="ip-alertas__table-wrap">
+          <table class="ip-alertas__table">
+            <thead>
+              <tr>
+                <th>Paciente</th>
+                <th>Tiene</th>
+                <th>Sugeridos</th>
+                <th>Valor Total</th>
+                <th>Gestión</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of a2(); track p.doc + '-' + $index) {
+                @let ek = expandKey('a2', p.doc, $index);
+                <tr
+                  class="ip-alertas__row"
+                  [class.ip-alertas__row--no-border]="isExpanded(ek)"
+                  (click)="toggleExpand(ek)"
+                >
+                  <td>
+                    <div class="ip-alertas__pac">
+                      <div class="ip-alertas__av" [style.background]="'rgba(225,112,85,.1)'" [style.color]="'#e17055'">{{ ini(p.nombre) }}</div>
+                      <div>
+                        <div class="ip-alertas__pac-name">
+                          {{ p.nombre }} <span class="ip-alertas__exp-ic">{{ isExpanded(ek) ? '▲' : '▼' }}</span>
+                        </div>
+                        <div class="ip-alertas__pac-cel">{{ p.celular }}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="ip-alertas__tags">
+                      @for (s of p.subcategorias; track s) {
+                        <span class="ip-alertas__tag ip-alertas__tag--blue">{{ s }}</span>
+                      }
+                    </div>
+                  </td>
+                  <td>
+                    <div class="ip-alertas__tags">
+                      @for (s of p.sugeridas; track s) {
+                        <span class="ip-alertas__tag ip-alertas__tag--orange">{{ s }}</span>
+                      }
+                    </div>
+                  </td>
+                  <td><strong>{{ fM(p.valor_total) }}</strong></td>
+                  <td (click)="$event.stopPropagation(); abrirFicha(p, 'A2 · Oportunidades Cross-sell')">
+                    @if (st.fichas()[p.doc]; as fi) {
+                      <span class="ip-alertas__badge-gest" [style.background]="estadoCfg[fi.estado]?.bg" [style.color]="estadoCfg[fi.estado]?.color" [style.border-color]="estadoCfg[fi.estado]?.color + '22'">{{ estadoCfg[fi.estado]?.label }}</span>
+                    } @else {
+                      <span class="ip-alertas__badge-gest ip-alertas__badge-gest--empty">+ Gestión</span>
+                    }
+                  </td>
+                </tr>
+                @if (isExpanded(ek)) {
+                  <tr class="ip-alertas__exp">
+                    <td colspan="5">
+                      <div class="ip-alertas__mini">
+                        <div class="ip-alertas__mini-grid">
+                          @for (row of [
+                            { l: 'Edad', v: p.edad ? p.edad + ' años' : '—' },
+                            { l: 'Procedencia', v: p.procedencia || '—' },
+                            { l: 'Visitas', v: p.visitas },
+                            { l: 'Valor Total', v: fM(p.valor_total) },
+                            { l: 'Primera Visita', v: p.historial?.length ? fD(p.historial[p.historial.length - 1].fecha) : '—' },
+                            { l: 'Última Visita', v: fD(p.ultima) },
+                          ]; track row.l) {
+                            <div class="ip-alertas__mini-cell">
+                              <div class="ip-alertas__mini-l">{{ row.l }}</div>
+                              <div class="ip-alertas__mini-v">{{ row.v }}</div>
+                            </div>
+                          }
+                        </div>
+                        @if (p.historial && p.historial.length > 0) {
+                          <div class="ip-alertas__mini-hist">
+                            <div class="ip-alertas__mini-hist-t">Historial</div>
+                            @for (h of p.historial; track $index) {
+                              <div class="ip-alertas__mini-hist-row">
+                                <div>
+                                  <div class="ip-alertas__mini-hist-f">{{ fD(h.fecha) }}</div>
+                                  <div class="ip-alertas__mini-hist-s">{{ h.subcategoria }}</div>
+                                </div>
+                                <div class="ip-alertas__mini-hist-val">{{ fM(h.valor) }}</div>
+                              </div>
+                            }
+                          </div>
+                        }
+                        <div class="ip-alertas__mini-side">
+                          <div class="ip-alertas__mini-h">Contacto</div>
+                          <button type="button" class="ip-alertas__copy" [class.ip-alertas__copy--on]="copiedKey() === ek + '-cel'" (click)="$event.stopPropagation(); copiarCel(ek + '-cel', p.celular)">{{ copiedKey() === ek + '-cel' ? '✓ Copiado' : '📋 ' + p.celular }}</button>
+                          @if (st.fichas()[p.doc]; as fi) {
+                            <div class="ip-alertas__mini-nota" [style.background]="estadoCfg[fi.estado]?.bg">
+                              <div class="ip-alertas__mini-nota-l" [style.color]="estadoCfg[fi.estado]?.color">{{ estadoCfg[fi.estado]?.label }}</div>
+                              @if (fi.notas) {
+                                <div class="ip-alertas__mini-nota-t">{{ fi.notas.slice(0, 60) }}{{ fi.notas.length > 60 ? '…' : '' }}</div>
+                              }
+                            </div>
+                          }
+                          <button type="button" class="ip-alertas__mini-btn" (click)="$event.stopPropagation(); abrirFicha(p, 'A2 · Oportunidades Cross-sell')">{{ st.fichas()[p.doc] ? 'Editar Gestión' : '+ Crear Ficha' }}</button>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    }
+  </div>
+
+  <!-- A3 -->
+  <div class="ip-alertas__block" [class.ip-alertas__block--dim]="refreshing()['a3']">
+    <div class="ip-alertas__head">
+      <button type="button" class="ip-alertas__head-main" (click)="toggle('a3')">
+        <div class="ip-alertas__icon ip-alertas__icon--a3">🟠</div>
+        <div class="ip-alertas__head-text">
+          <div class="ip-alertas__title">Tratamientos Abandonados</div>
+          <div class="ip-alertas__sub">Múltiples sesiones sin retorno (&gt;30 días)</div>
+        </div>
+        <span class="ip-alertas__count ip-alertas__count--a3"
+          >{{ a3().length
+          }}@if (a3().length !== a3base().length) {
+            <span> / {{ a3base().length }}</span>
+          }</span
+        >
+        <span class="ip-alertas__chev">{{ open()['a3'] ? '▲' : '▼' }}</span>
+      </button>
+      <button type="button" class="ip-alertas__refresh" [disabled]="refreshing()['a3']" (click)="handleRefresh('a3'); $event.stopPropagation()">
+        {{ refreshing()['a3'] ? '↻ Actualizando…' : '↻ Actualizar' }}
+      </button>
+    </div>
+    <div class="ip-alertas__goalstrip">
+      <app-ip-goal-progress metricKey="alertas_a3" [actual]="a3().length" format="int" />
+    </div>
+    @if (open()['a3']) {
+      <div class="ip-alertas__filtros">
+        <div class="ip-alertas__fld">
+          <label>Sesiones mínimas</label>
+          <input type="number" [ngModel]="f3().sesiones" (ngModelChange)="f3.set({ ...f3(), sesiones: $event })" placeholder="≥ 2" />
+        </div>
+        <div class="ip-alertas__fld">
+          <label>Subcategoría</label>
+          <select [ngModel]="f3().subcat" (ngModelChange)="f3.set({ ...f3(), subcat: $event })">
+            @for (s of subcats; track s) {
+              <option [value]="s">{{ s }}</option>
+            }
+          </select>
+        </div>
+        <div class="ip-alertas__fld">
+          <label>Profesional</label>
+          <select [ngModel]="f3().profesional" (ngModelChange)="f3.set({ ...f3(), profesional: $event })">
+            @for (p of profesionales(); track p) {
+              <option [value]="p">{{ p }}</option>
+            }
+          </select>
+        </div>
+      </div>
+      @if (a3().length === 0) {
+        <div class="ip-alertas__empty">Sin resultados para los filtros seleccionados</div>
+      } @else {
+        <div class="ip-alertas__table-wrap">
+          <table class="ip-alertas__table">
+            <thead>
+              <tr>
+                <th>Paciente</th>
+                <th>Servicio</th>
+                <th>Sesiones</th>
+                <th>Días</th>
+                <th>Valor</th>
+                <th>Gestión</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of a3(); track p.doc + '-' + p.subcat + '-' + $index) {
+                @let ek = expandKey('a3', p.doc + p.subcat, $index);
+                <tr class="ip-alertas__row" [class.ip-alertas__row--no-border]="isExpanded(ek)" (click)="toggleExpand(ek)">
+                  <td>
+                    <div class="ip-alertas__pac">
+                      <div class="ip-alertas__av" [style.background]="'rgba(225,112,85,.08)'" [style.color]="'#e17055'">{{ ini(p.nombre) }}</div>
+                      <div>
+                        <div class="ip-alertas__pac-name">{{ p.nombre }} <span class="ip-alertas__exp-ic">{{ isExpanded(ek) ? '▲' : '▼' }}</span></div>
+                        <div class="ip-alertas__pac-cel">{{ p.celular }}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span class="ip-alertas__tag ip-alertas__tag--orange">{{ p.subcat }}</span></td>
+                  <td><span class="ip-alertas__fw">{{ p.sesiones }} sesiones</span></td>
+                  <td><span class="ip-alertas__dias-a3">{{ p.dias }} días</span></td>
+                  <td>{{ fM(p.valor_total) }}</td>
+                  <td (click)="$event.stopPropagation(); abrirFicha(p, 'A3 · Tratamientos Abandonados')">
+                    @if (st.fichas()[p.doc]; as fi) {
+                      <span class="ip-alertas__badge-gest" [style.background]="estadoCfg[fi.estado]?.bg" [style.color]="estadoCfg[fi.estado]?.color" [style.border-color]="estadoCfg[fi.estado]?.color + '22'">{{ estadoCfg[fi.estado]?.label }}</span>
+                    } @else {
+                      <span class="ip-alertas__badge-gest ip-alertas__badge-gest--empty">+ Gestión</span>
+                    }
+                  </td>
+                </tr>
+                @if (isExpanded(ek)) {
+                  <tr class="ip-alertas__exp">
+                    <td colspan="6">
+                      <div class="ip-alertas__mini">
+                        <div class="ip-alertas__mini-grid">
+                          @for (row of [
+                            { l: 'Edad', v: p.edad ? p.edad + ' años' : '—' },
+                            { l: 'Procedencia', v: p.procedencia || '—' },
+                            { l: 'Visitas', v: p.visitas },
+                            { l: 'Valor Total', v: fM(p.valor_total) },
+                            { l: 'Primera Visita', v: p.historial?.length ? fD(p.historial[p.historial.length - 1].fecha) : '—' },
+                            { l: 'Última Visita', v: fD(p.ultima) },
+                          ]; track row.l) {
+                            <div class="ip-alertas__mini-cell">
+                              <div class="ip-alertas__mini-l">{{ row.l }}</div>
+                              <div class="ip-alertas__mini-v">{{ row.v }}</div>
+                            </div>
+                          }
+                        </div>
+                        @if (p.historial && p.historial.length > 0) {
+                          <div class="ip-alertas__mini-hist">
+                            <div class="ip-alertas__mini-hist-t">Historial</div>
+                            @for (h of p.historial; track $index) {
+                              <div class="ip-alertas__mini-hist-row">
+                                <div>
+                                  <div class="ip-alertas__mini-hist-f">{{ fD(h.fecha) }}</div>
+                                  <div class="ip-alertas__mini-hist-s">{{ h.subcategoria }}</div>
+                                </div>
+                                <div class="ip-alertas__mini-hist-val">{{ fM(h.valor) }}</div>
+                              </div>
+                            }
+                          </div>
+                        }
+                        <div class="ip-alertas__mini-side">
+                          <div class="ip-alertas__mini-h">Contacto</div>
+                          <button type="button" class="ip-alertas__copy" [class.ip-alertas__copy--on]="copiedKey() === ek + '-cel'" (click)="$event.stopPropagation(); copiarCel(ek + '-cel', p.celular)">{{ copiedKey() === ek + '-cel' ? '✓ Copiado' : '📋 ' + p.celular }}</button>
+                          @if (st.fichas()[p.doc]; as fi) {
+                            <div class="ip-alertas__mini-nota" [style.background]="estadoCfg[fi.estado]?.bg">
+                              <div class="ip-alertas__mini-nota-l" [style.color]="estadoCfg[fi.estado]?.color">{{ estadoCfg[fi.estado]?.label }}</div>
+                              @if (fi.notas) {
+                                <div class="ip-alertas__mini-nota-t">{{ fi.notas.slice(0, 60) }}{{ fi.notas.length > 60 ? '…' : '' }}</div>
+                              }
+                            </div>
+                          }
+                          <button type="button" class="ip-alertas__mini-btn" (click)="$event.stopPropagation(); abrirFicha(p, 'A3 · Tratamientos Abandonados')">{{ st.fichas()[p.doc] ? 'Editar Gestión' : '+ Crear Ficha' }}</button>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    }
+  </div>
+
+  <!-- A4 -->
+  <div class="ip-alertas__block" [class.ip-alertas__block--dim]="refreshing()['a4']">
+    <div class="ip-alertas__head">
+      <button type="button" class="ip-alertas__head-main" (click)="toggle('a4')">
+        <div class="ip-alertas__icon ip-alertas__icon--a4">🟣</div>
+        <div class="ip-alertas__head-text">
+          <div class="ip-alertas__title">Recompra por Servicios</div>
+          <div class="ip-alertas__sub">Pacientes que deben volver (&gt;60 días)</div>
+        </div>
+        <span class="ip-alertas__count ip-alertas__count--a4"
+          >{{ a4().length
+          }}@if (a4().length !== a4base().length) {
+            <span> / {{ a4base().length }}</span>
+          }</span
+        >
+        <span class="ip-alertas__chev">{{ open()['a4'] ? '▲' : '▼' }}</span>
+      </button>
+      <button type="button" class="ip-alertas__refresh" [disabled]="refreshing()['a4']" (click)="handleRefresh('a4'); $event.stopPropagation()">
+        {{ refreshing()['a4'] ? '↻ Actualizando…' : '↻ Actualizar' }}
+      </button>
+    </div>
+    <div class="ip-alertas__goalstrip">
+      <app-ip-goal-progress metricKey="alertas_a4" [actual]="a4().length" format="int" />
+    </div>
+    @if (open()['a4']) {
+      <div class="ip-alertas__filtros">
+        <div class="ip-alertas__fld">
+          <label>CUPS</label>
+          <select [ngModel]="f4().cups" (ngModelChange)="f4.set({ ...f4(), cups: $event })" [class.ip-alertas__sel-act]="f4().cups !== 'Todos'">
+            @for (c of cupsList; track c) {
+              <option [value]="c">{{ c }}</option>
+            }
+          </select>
+        </div>
+        <div class="ip-alertas__fld">
+          <label>Subcategoría</label>
+          <select [ngModel]="f4().subcat" (ngModelChange)="f4.set({ ...f4(), subcat: $event })" [class.ip-alertas__sel-act]="f4().subcat !== 'Todas'">
+            @for (s of subcats; track s) {
+              <option [value]="s">{{ s }}</option>
+            }
+          </select>
+        </div>
+        <div class="ip-alertas__fld">
+          <label>Días mínimos</label>
+          <input type="number" [ngModel]="f4().dias" (ngModelChange)="f4.set({ ...f4(), dias: $event })" placeholder="≥ 60" />
+        </div>
+        <div class="ip-alertas__fld">
+          <label>Profesional</label>
+          <select [ngModel]="f4().profesional" (ngModelChange)="f4.set({ ...f4(), profesional: $event })" [class.ip-alertas__sel-act]="f4().profesional !== 'Todos'">
+            @for (p of profesionales(); track p) {
+              <option [value]="p">{{ p }}</option>
+            }
+          </select>
+        </div>
+      </div>
+      @if (a4().length === 0) {
+        <div class="ip-alertas__empty">Sin resultados para los filtros seleccionados</div>
+      } @else {
+        <div class="ip-alertas__table-wrap">
+          <table class="ip-alertas__table">
+            <thead>
+              <tr>
+                <th>Paciente</th>
+                <th>Servicios</th>
+                <th>Visitas</th>
+                <th>Valor Total</th>
+                <th>Días</th>
+                <th>Gestión</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of a4(); track p.doc + '-' + $index) {
+                @let ek = expandKey('a4', p.doc, $index);
+                <tr class="ip-alertas__row" [class.ip-alertas__row--no-border]="isExpanded(ek)" (click)="toggleExpand(ek)">
+                  <td>
+                    <div class="ip-alertas__pac">
+                      <div class="ip-alertas__av" [style.background]="'rgba(108,99,255,.1)'" [style.color]="'#6c63ff'">{{ ini(p.nombre) }}</div>
+                      <div>
+                        <div class="ip-alertas__pac-name">{{ p.nombre }} <span class="ip-alertas__exp-ic">{{ isExpanded(ek) ? '▲' : '▼' }}</span></div>
+                        <div class="ip-alertas__pac-cel">{{ p.celular }}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="ip-alertas__tags">
+                      @for (s of p.subcategorias; track s) {
+                        <span class="ip-alertas__tag ip-alertas__tag--purple">{{ s }}</span>
+                      }
+                    </div>
+                  </td>
+                  <td><span class="ip-alertas__fw">{{ p.visitas }} visitas</span></td>
+                  <td><strong>{{ fM(p.valor_total) }}</strong></td>
+                  <td><span class="ip-alertas__dias-a4">{{ p.dias }} días</span></td>
+                  <td (click)="$event.stopPropagation(); abrirFicha(p, 'A4 · Recompra por Servicios')">
+                    @if (st.fichas()[p.doc]; as fi) {
+                      <span class="ip-alertas__badge-gest" [style.background]="estadoCfg[fi.estado]?.bg" [style.color]="estadoCfg[fi.estado]?.color" [style.border-color]="estadoCfg[fi.estado]?.color + '22'">{{ estadoCfg[fi.estado]?.label }}</span>
+                    } @else {
+                      <span class="ip-alertas__badge-gest ip-alertas__badge-gest--empty">+ Gestión</span>
+                    }
+                  </td>
+                </tr>
+                @if (isExpanded(ek)) {
+                  <tr class="ip-alertas__exp">
+                    <td colspan="6">
+                      <div class="ip-alertas__mini">
+                        <div class="ip-alertas__mini-grid">
+                          @for (row of [
+                            { l: 'Edad', v: p.edad ? p.edad + ' años' : '—' },
+                            { l: 'Procedencia', v: p.procedencia || '—' },
+                            { l: 'Visitas', v: p.visitas },
+                            { l: 'Valor Total', v: fM(p.valor_total) },
+                            { l: 'Primera Visita', v: p.historial?.length ? fD(p.historial[p.historial.length - 1].fecha) : '—' },
+                            { l: 'Última Visita', v: fD(p.ultima) },
+                          ]; track row.l) {
+                            <div class="ip-alertas__mini-cell">
+                              <div class="ip-alertas__mini-l">{{ row.l }}</div>
+                              <div class="ip-alertas__mini-v">{{ row.v }}</div>
+                            </div>
+                          }
+                        </div>
+                        @if (p.historial && p.historial.length > 0) {
+                          <div class="ip-alertas__mini-hist">
+                            <div class="ip-alertas__mini-hist-t">Historial</div>
+                            @for (h of p.historial; track $index) {
+                              <div class="ip-alertas__mini-hist-row">
+                                <div>
+                                  <div class="ip-alertas__mini-hist-f">{{ fD(h.fecha) }}</div>
+                                  <div class="ip-alertas__mini-hist-s">{{ h.subcategoria }}</div>
+                                </div>
+                                <div class="ip-alertas__mini-hist-val">{{ fM(h.valor) }}</div>
+                              </div>
+                            }
+                          </div>
+                        }
+                        <div class="ip-alertas__mini-side">
+                          <div class="ip-alertas__mini-h">Contacto</div>
+                          <button type="button" class="ip-alertas__copy" [class.ip-alertas__copy--on]="copiedKey() === ek + '-cel'" (click)="$event.stopPropagation(); copiarCel(ek + '-cel', p.celular)">{{ copiedKey() === ek + '-cel' ? '✓ Copiado' : '📋 ' + p.celular }}</button>
+                          @if (st.fichas()[p.doc]; as fi) {
+                            <div class="ip-alertas__mini-nota" [style.background]="estadoCfg[fi.estado]?.bg">
+                              <div class="ip-alertas__mini-nota-l" [style.color]="estadoCfg[fi.estado]?.color">{{ estadoCfg[fi.estado]?.label }}</div>
+                              @if (fi.notas) {
+                                <div class="ip-alertas__mini-nota-t">{{ fi.notas.slice(0, 60) }}{{ fi.notas.length > 60 ? '…' : '' }}</div>
+                              }
+                            </div>
+                          }
+                          <button type="button" class="ip-alertas__mini-btn" (click)="$event.stopPropagation(); abrirFicha(p, 'A4 · Recompra por Servicios')">{{ st.fichas()[p.doc] ? 'Editar Gestión' : '+ Crear Ficha' }}</button>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    }
+  </div>
+
+  <!-- A5 -->
+  <div class="ip-alertas__block" [class.ip-alertas__block--dim]="refreshing()['a5']">
+    <div class="ip-alertas__head">
+      <button type="button" class="ip-alertas__head-main" (click)="toggle('a5')">
+        <div class="ip-alertas__icon ip-alertas__icon--a5">📌</div>
+        <div class="ip-alertas__head-text">
+          <div class="ip-alertas__title">Atenciones para Seguimiento</div>
+          <div class="ip-alertas__sub">Pacientes en fidelización activa con ficha de gestión comercial</div>
+        </div>
+        <span class="ip-alertas__count ip-alertas__count--a5"
+          >{{ a5().length
+          }}@if (a5().length !== a5base().length) {
+            <span> / {{ a5base().length }}</span>
+          }</span
+        >
+        <span class="ip-alertas__chev">{{ open()['a5'] ? '▲' : '▼' }}</span>
+      </button>
+      <button type="button" class="ip-alertas__refresh" [disabled]="refreshing()['a5']" (click)="handleRefresh('a5'); $event.stopPropagation()">
+        {{ refreshing()['a5'] ? '↻ Actualizando…' : '↻ Actualizar' }}
+      </button>
+    </div>
+    <div class="ip-alertas__goalstrip">
+      <app-ip-goal-progress metricKey="alertas_a5" [actual]="a5().length" format="int" />
+    </div>
+    @if (open()['a5']) {
+      <div class="ip-alertas__filtros">
+        <div class="ip-alertas__fld">
+          <label>Actividad</label>
+          <select [ngModel]="f5().actividad" (ngModelChange)="f5.set({ ...f5(), actividad: $event })" [class.ip-alertas__sel-act]="f5().actividad !== 'Todas'">
+            @for (opt of f5ActividadOpts; track opt) {
+              <option [value]="opt">{{ f5ActividadLabel(opt) }}</option>
+            }
+          </select>
+        </div>
+      </div>
+      @if (a5().length === 0) {
+        <div class="ip-alertas__empty">Sin resultados para los filtros seleccionados</div>
+      } @else {
+        <div class="ip-alertas__table-wrap">
+          <table class="ip-alertas__table">
+            <thead>
+              <tr>
+                <th>Paciente</th>
+                <th>Actividad</th>
+                <th>Ticket</th>
+                <th>Notas</th>
+                <th>Valor Total</th>
+                <th>Gestión</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of a5(); track p.doc + '-' + $index) {
+                @let ek = expandKey('a5', p.doc, $index);
+                @let fi = p.ficha;
+                <tr class="ip-alertas__row" [class.ip-alertas__row--no-border]="isExpanded(ek)" (click)="toggleExpand(ek)">
+                  <td>
+                    <div class="ip-alertas__pac">
+                      <div class="ip-alertas__av" [style.background]="'rgba(108,99,255,.08)'" [style.color]="'#6c63ff'">{{ ini(p.nombre) }}</div>
+                      <div>
+                        <div class="ip-alertas__pac-name">{{ p.nombre }} <span class="ip-alertas__exp-ic">{{ isExpanded(ek) ? '▲' : '▼' }}</span></div>
+                        <div class="ip-alertas__pac-cel">{{ p.celular }}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    @if (fi.actividad) {
+                      <span class="ip-alertas__pill" [style.background]="actividadColor[fi.actividad] + '22'" [style.color]="actividadColor[fi.actividad]">{{ actividadLabel[fi.actividad] }}</span>
+                    } @else {
+                      —
+                    }
+                  </td>
+                  <td>
+                    @if (fi.ticket) {
+                      <span class="ip-alertas__pill" [style.background]="ticketColor[fi.ticket] + '22'" [style.color]="ticketColor[fi.ticket]">Ticket {{ fi.ticket }}</span>
+                    } @else {
+                      —
+                    }
+                  </td>
+                  <td>
+                    @if (fi.notas) {
+                      <span class="ip-alertas__notas">{{ fi.notas.slice(0, 40) }}{{ fi.notas.length > 40 ? '…' : '' }}</span>
+                    } @else {
+                      —
+                    }
+                  </td>
+                  <td><strong>{{ fM(p.valor_total) }}</strong></td>
+                  <td (click)="$event.stopPropagation(); abrirFicha(p, 'A5 · Atenciones para Seguimiento')">
+                    <span class="ip-alertas__badge-gest" [style.background]="estadoCfg[fi.estado]?.bg" [style.color]="estadoCfg[fi.estado]?.color" [style.border-color]="estadoCfg[fi.estado]?.color + '22'">{{ estadoCfg[fi.estado]?.label }}</span>
+                  </td>
+                </tr>
+                @if (isExpanded(ek)) {
+                  <tr class="ip-alertas__exp">
+                    <td colspan="6">
+                      <div class="ip-alertas__mini">
+                        <div class="ip-alertas__mini-grid">
+                          @for (row of [
+                            { l: 'Edad', v: p.edad ? p.edad + ' años' : '—' },
+                            { l: 'Procedencia', v: p.procedencia || '—' },
+                            { l: 'Visitas', v: p.visitas },
+                            { l: 'Valor Total', v: fM(p.valor_total) },
+                            { l: 'Primera Visita', v: p.historial?.length ? fD(p.historial[p.historial.length - 1].fecha) : '—' },
+                            { l: 'Última Visita', v: fD(p.ultima) },
+                          ]; track row.l) {
+                            <div class="ip-alertas__mini-cell">
+                              <div class="ip-alertas__mini-l">{{ row.l }}</div>
+                              <div class="ip-alertas__mini-v">{{ row.v }}</div>
+                            </div>
+                          }
+                        </div>
+                        @if (p.historial && p.historial.length > 0) {
+                          <div class="ip-alertas__mini-hist">
+                            <div class="ip-alertas__mini-hist-t">Historial</div>
+                            @for (h of p.historial; track $index) {
+                              <div class="ip-alertas__mini-hist-row">
+                                <div>
+                                  <div class="ip-alertas__mini-hist-f">{{ fD(h.fecha) }}</div>
+                                  <div class="ip-alertas__mini-hist-s">{{ h.subcategoria }}</div>
+                                </div>
+                                <div class="ip-alertas__mini-hist-val">{{ fM(h.valor) }}</div>
+                              </div>
+                            }
+                          </div>
+                        }
+                        <div class="ip-alertas__mini-side">
+                          <div class="ip-alertas__mini-h">Contacto</div>
+                          <button type="button" class="ip-alertas__copy" [class.ip-alertas__copy--on]="copiedKey() === ek + '-cel'" (click)="$event.stopPropagation(); copiarCel(ek + '-cel', p.celular)">{{ copiedKey() === ek + '-cel' ? '✓ Copiado' : '📋 ' + p.celular }}</button>
+                          <div class="ip-alertas__mini-nota" [style.background]="estadoCfg[fi.estado]?.bg">
+                            <div class="ip-alertas__mini-nota-l" [style.color]="estadoCfg[fi.estado]?.color">{{ estadoCfg[fi.estado]?.label }}</div>
+                            @if (fi.notas) {
+                              <div class="ip-alertas__mini-nota-t">{{ fi.notas.slice(0, 60) }}{{ fi.notas.length > 60 ? '…' : '' }}</div>
+                            }
+                          </div>
+                          <button type="button" class="ip-alertas__mini-btn" (click)="$event.stopPropagation(); abrirFicha(p, 'A5 · Atenciones para Seguimiento')">Editar Gestión</button>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    }
+  </div>
+</div>
+
+@if (fichaModal(); as fm) {
+  <app-ip-modal-ficha [pac]="fm.pac" [origen]="fm.origen" [onCrearTarea]="true" (close)="fichaModal.set(null)" />
+}

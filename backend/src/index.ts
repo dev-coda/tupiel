@@ -12,10 +12,13 @@ import dbToggleRouter from './routes/db-toggle';
 import diasNoLaboralesRouter from './routes/dias-no-laborales';
 import monthlyConfigRouter from './routes/monthly-config';
 import savedReportsRouter from './routes/saved-reports';
+import inteligenciaPacientesRouter from './routes/inteligencia-pacientes';
+import inteligenciaUsersRouter from './routes/inteligencia-users';
 import { testConnection } from './config/database';
 import { initAppDatabase } from './config/app-database';
+import { initInteligenciaDatabase } from './config/ip-database';
 import { startDailyReportsJob } from './jobs/daily-reports';
-import { requireAuth } from './middleware/auth';
+import { requireAuth, requireInteligenciaAdmin } from './middleware/auth';
 
 dotenv.config();
 
@@ -50,6 +53,13 @@ app.use('/api/db-toggle', requireAuth, dbToggleRouter);
 app.use('/api/dias-no-laborales', requireAuth, diasNoLaboralesRouter);
 app.use('/api/monthly-config', requireAuth, monthlyConfigRouter);
 app.use('/api/saved-reports', requireAuth, savedReportsRouter);
+app.use(
+  '/api/inteligencia-pacientes/users',
+  requireAuth,
+  requireInteligenciaAdmin,
+  inteligenciaUsersRouter
+);
+app.use('/api/inteligencia-pacientes', requireAuth, inteligenciaPacientesRouter);
 
 // Start server
 async function start() {
@@ -67,6 +77,9 @@ async function start() {
   // Errors are logged but don't prevent server startup
   await initAppDatabase();
 
+  // Inteligencia CRM — separate MySQL database (`tupiel_inteligencia` by default)
+  await initInteligenciaDatabase();
+
   // Start daily reports job (runs at 11pm)
   startDailyReportsJob();
 
@@ -77,4 +90,7 @@ async function start() {
   });
 }
 
-start();
+start().catch((err) => {
+  console.error('Fatal: server startup failed:', err);
+  process.exit(1);
+});

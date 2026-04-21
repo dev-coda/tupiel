@@ -6,6 +6,8 @@ import {
 } from '../services/monthly-config';
 import { getActiveEmployees, getProductsFromDB } from '../services/employees-products';
 import { ControladorConfig } from '../config/controlador-config';
+import { toDateString } from '../utils/dates';
+import { appQuery } from '../config/app-database';
 
 const router = Router();
 
@@ -39,8 +41,8 @@ router.get('/', async (req: Request, res: Response) => {
   if (!from || !to) {
     const firstDay = new Date(yearNum, monthNum - 1, 1);
     const lastDay = new Date(yearNum, monthNum, 0);
-    dateFrom = firstDay.toISOString().substring(0, 10);
-    dateTo = lastDay.toISOString().substring(0, 10);
+    dateFrom = toDateString(firstDay);
+    dateTo = toDateString(lastDay);
   }
 
   try {
@@ -197,6 +199,48 @@ router.get('/history', async (req: Request, res: Response) => {
       error: 'Failed to get config history',
       details: errorMessage,
     });
+  }
+});
+
+// ─── Hidden Employees ───────────────────────────────────
+
+router.get('/hidden-employees', async (_req: Request, res: Response) => {
+  try {
+    const result = await appQuery('SELECT * FROM hidden_employees ORDER BY categoria, nombre');
+    res.json({ data: result.rows });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to load hidden employees' });
+  }
+});
+
+router.post('/hidden-employees', async (req: Request, res: Response) => {
+  const { nombre, categoria } = req.body;
+  if (!nombre || !categoria) {
+    res.status(400).json({ error: 'nombre and categoria are required' });
+    return;
+  }
+  try {
+    await appQuery(
+      'INSERT IGNORE INTO hidden_employees (nombre, categoria) VALUES (?, ?)',
+      [nombre, categoria]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to hide employee' });
+  }
+});
+
+router.delete('/hidden-employees/:id', async (req: Request, res: Response) => {
+  const id = parseInt(String(req.params.id), 10);
+  if (isNaN(id)) {
+    res.status(400).json({ error: 'Invalid ID' });
+    return;
+  }
+  try {
+    await appQuery('DELETE FROM hidden_employees WHERE id = ?', [id]);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to unhide employee' });
   }
 });
 

@@ -13,7 +13,9 @@ dotenv.config();
  * - employee_presupuestos (employee budgets)
  * - product_metas (product targets)
  * - saved_reports (daily report snapshots)
- * 
+ *
+ * Inteligencia de Pacientes (ip_* tables) lives in a separate MySQL database — see `ip-database.ts`.
+ *
  * This is SEPARATE from the production database which is read-only.
  * The production database is used for all report data (rentabilidad, estimada, etc.)
  */
@@ -156,18 +158,32 @@ export async function initAppDatabase(): Promise<void> {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
+    // Inteligencia de Pacientes — per-user role/cargo (mirrors legacy admin vs operario)
+    await migrateUsersInteligenciaColumns(conn);
+
     // Seed default user if no users exist
     const [existingUsers] = await conn.query('SELECT COUNT(*) AS cnt FROM users');
     const userCount = (existingUsers as Array<{ cnt: number }>)[0].cnt;
     if (userCount === 0) {
       const hash = await bcrypt.hash('DidierTuPiel2025', 10);
       await conn.query(
-        'INSERT INTO users (username, name, password_hash) VALUES (?, ?, ?)',
-        ['Didier', 'Didier', hash]
+        'INSERT INTO users (username, name, password_hash, ip_rol, ip_cargo) VALUES (?, ?, ?, ?, ?)',
+        ['Didier', 'Didier', hash, 'operario', 'Usuario']
       );
       console.log('👤 Default user "Didier" seeded');
     }
-    
+
+    // Create hidden_employees table - tracks employees hidden from monthly config
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS hidden_employees (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        nombre VARCHAR(255) NOT NULL,
+        categoria ENUM('DERMATOLOGÍA', 'MED ESTÉTICA', 'TP LOUNGE') NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY uk_nombre_cat (nombre, categoria)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
     console.log('✅ App database initialized successfully');
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err);
@@ -200,3 +216,39 @@ export async function testAppConnection(): Promise<boolean> {
 }
 
 export default appPool;
+
+/** Add ip_rol / ip_cargo and align legacy rule: username "admin" → admin; ensure ≥1 admin exists. */
+async function migrateUsersInteligenciaColumns(conn: PoolConnection): Promise<void> {
+  const alters = [
+    `ALTER TABLE users ADD COLUMN ip_rol ENUM('admin','operario') NOT NULL DEFAULT 'operario'`,
+    `ALTER TABLE users ADD COLUMN ip_cargo VARCHAR(255) NULL`,
+  ];
+  for (const sql of alters) {
+    try {
+      await conn.query(sql);
+    } catch (e: unknown) {
+      const code = (e as { code?: string })?.code;
+      // MySQL: ER_DUP_FIELDNAME — column already exists
+      if (code !== 'ER_DUP_FIELDNAME') throw e;
+    }
+  }
+
+  await conn.query(
+    `UPDATE users SET ip_rol = 'admin', ip_cargo = COALESCE(NULLIF(TRIM(ip_cargo), ''), 'Administrador')
+     WHERE LOWER(username) = 'admin'`
+  );
+
+  const [cntRows] = await conn.query(`SELECT COUNT(*) AS c FROM users WHERE ip_rol = 'admin'`);
+  const adminCount = Number((cntRows as Array<{ c: number }>)[0]?.c ?? 0);
+  if (adminCount === 0) {
+    const [minRows] = await conn.query(`SELECT MIN(id) AS mid FROM users`);
+    const mid = (minRows as Array<{ mid: number }>)[0]?.mid;
+    if (mid != null) {
+      await conn.query(
+        `UPDATE users SET ip_rol = 'admin', ip_cargo = COALESCE(NULLIF(TRIM(ip_cargo), ''), 'Administrador') WHERE id = ?`,
+        [mid]
+      );
+      console.log('👤 Promoted earliest user to Inteligencia admin (no admin row existed)');
+    }
+  }
+}

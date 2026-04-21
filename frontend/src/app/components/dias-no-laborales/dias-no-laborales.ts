@@ -88,7 +88,7 @@ export class DiasNoLaborales implements OnInit {
 
   openEditDialog(dia: DiaNoLaboral) {
     this.editingDia.set(dia);
-    this.fecha = new Date(dia.fecha);
+    this.fecha = new Date(dia.fecha + 'T12:00:00');
     this.descripcion = dia.descripcion || '';
     this.showDialog.set(true);
   }
@@ -224,7 +224,8 @@ export class DiasNoLaborales implements OnInit {
   }
 
   formatDateDisplay(fecha: string): string {
-    const date = new Date(fecha);
+    const dateStr = typeof fecha === 'string' ? fecha.substring(0, 10) : String(fecha).substring(0, 10);
+    const date = new Date(dateStr + 'T12:00:00');
     return date.toLocaleDateString('es-ES', {
       year: 'numeric',
       month: 'long',

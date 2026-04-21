@@ -1,0 +1,24 @@
+// Scoped design tokens: TuPiel app shell + Prime surface palette
+.ip-root {
+  --ip-primary: var(--p-primary-color, #6366f1);
+  --ip-green: var(--p-green-500, #22c55e);
+  --ip-red: var(--p-red-500, #ef4444);
+  --ip-amber: var(--p-orange-400, #fb923c);
+  --ip-blue: var(--p-sky-500, #0ea5e9);
+
+  --ip-bg: var(--p-content-background, #eef2f6);
+  --ip-surface: var(--p-surface-0, #ffffff);
+  --ip-line: var(--p-content-border-color, #e2e8f0);
+  --ip-line2: color-mix(in srgb, var(--ip-line) 85%, transparent);
+
+  --ip-text1: var(--p-text-color, #1e293b);
+  --ip-text2: var(--p-text-muted-color, #64748b);
+  --ip-text3: #94a3b8;
+  --ip-text4: #cbd5e1;
+
+  --ip-sidebar-bg: var(--p-surface-50, #f8fafc);
+  --ip-sidebar-text: var(--p-text-muted-color, #64748b);
+  --ip-sidebar-text2: var(--p-text-color, #334155);
+  --ip-sidebar-w: 220px;
+  --ip-top-h: 44px;
+}

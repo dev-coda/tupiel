@@ -52,7 +52,6 @@ export async function getActiveEmployees(
   dateFrom?: string,
   dateTo?: string
 ): Promise<{ dermatologia: EmployeeFromDB[]; medEstetica: EmployeeFromDB[]; lounge: EmployeeFromDB[] }> {
-  // Default to current month if not provided
   if (!dateFrom || !dateTo) {
     const now = new Date();
     const y = now.getFullYear();
@@ -62,7 +61,7 @@ export async function getActiveEmployees(
     dateTo = `${y}-${String(m).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
   }
 
-  // Query all employees who have activity in the period
+  // Try activity-based query first (employees with consulta_cups in the period)
   const result = await query(`
     SELECT DISTINCT per.user_id, per.nombre, per.cargo
     FROM personal per
@@ -71,15 +70,31 @@ export async function getActiveEmployees(
     ORDER BY per.cargo, per.nombre
   `, [dateFrom, `${dateTo} 23:59:59`]);
 
+  let rows = result.rows;
+
+  // If no activity found (future month or empty period), load all employees
+  // with relevant cargos from the personal table
+  if (rows.length === 0) {
+    const allCargos = [...DERMATOLOGIA_CARGOS, ...MED_ESTETICA_CARGOS, ...LOUNGE_CARGOS];
+    const placeholders = allCargos.map(() => '?').join(',');
+    const fallback = await query(`
+      SELECT user_id, nombre, cargo
+      FROM personal
+      WHERE UPPER(TRIM(cargo)) IN (${placeholders})
+      ORDER BY cargo, nombre
+    `, allCargos);
+    rows = fallback.rows;
+  }
+
   const dermatologia: EmployeeFromDB[] = [];
   const medEstetica: EmployeeFromDB[] = [];
   const lounge: EmployeeFromDB[] = [];
 
-  for (const row of result.rows) {
+  for (const row of rows) {
     const cargo = String(row.cargo || '');
     const categoria = classifyCargo(cargo);
     
-    if (!categoria) continue; // Skip employees that don't fit any category
+    if (!categoria) continue;
 
     const emp: EmployeeFromDB = {
       user_id: Number(row.user_id),

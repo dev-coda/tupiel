@@ -1,0 +1,145 @@
+@use '../inteligencia-pacientes-tokens.scss' as *;
+
+:host {
+  display: block;
+}
+
+.ip-meta {
+  max-width: 880px;
+  margin: 0 auto;
+}
+
+.ip-meta__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.ip-meta__title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 0.35rem;
+  color: var(--ip-text1);
+}
+
+.ip-meta__sub {
+  font-size: 0.78rem;
+  color: var(--ip-text3);
+  line-height: 1.45;
+  margin: 0;
+  max-width: 42rem;
+}
+
+.ip-meta__ym {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+
+  label {
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ip-text4);
+  }
+
+  input[type='month'] {
+    padding: 0.35rem 0.5rem;
+    border-radius: 6px;
+    border: 1px solid var(--ip-line);
+    font-size: 0.85rem;
+    background: var(--ip-surface);
+    color: var(--ip-text1);
+  }
+}
+
+.ip-meta__ok {
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  background: rgba(0, 184, 148, 0.1);
+  border: 1px solid rgba(0, 184, 148, 0.25);
+  color: var(--ip-green);
+  font-size: 0.78rem;
+  margin-bottom: 0.75rem;
+}
+
+.ip-meta__err {
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  background: rgba(214, 48, 49, 0.08);
+  border: 1px solid rgba(214, 48, 49, 0.25);
+  color: #c0392b;
+  font-size: 0.78rem;
+  margin-bottom: 0.75rem;
+}
+
+.ip-meta__sec {
+  margin-bottom: 1.25rem;
+  padding: 0.85rem 1rem;
+  background: var(--ip-surface);
+  border: 1px solid var(--ip-line);
+  border-radius: 8px;
+}
+
+.ip-meta__sec-t {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--ip-text1);
+  margin: 0 0 0.65rem;
+}
+
+.ip-meta__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.65rem;
+}
+
+.ip-meta__fld {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+
+  label {
+    font-size: 0.62rem;
+    font-weight: 600;
+    color: var(--ip-text2);
+  }
+
+  input {
+    padding: 0.35rem 0.5rem;
+    border-radius: 5px;
+    border: 1px solid var(--ip-line);
+    font-size: 0.8rem;
+    background: var(--ip-bg);
+    color: var(--ip-text1);
+  }
+}
+
+.ip-meta__hint {
+  font-size: 0.58rem;
+  color: var(--ip-text4);
+  line-height: 1.3;
+}
+
+.ip-meta__actions {
+  margin-top: 0.5rem;
+}
+
+.ip-meta__btn {
+  padding: 0.45rem 1rem;
+  border-radius: 6px;
+  border: none;
+  background: var(--ip-primary);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: wait;
+  }
+}

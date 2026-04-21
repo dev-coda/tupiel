@@ -1,0 +1,19 @@
+@if (target(); as tg) {
+  @if (pct(); as p) {
+    <div
+      class="ip-gp"
+      [class.ip-gp--ok]="p >= 100"
+      [class.ip-gp--mid]="p >= 50 && p < 100"
+      [class.ip-gp--low]="p < 50"
+    >
+      <div class="ip-gp__track" aria-hidden="true">
+        <div class="ip-gp__fill" [style.width.%]="p > 100 ? 100 : p"></div>
+      </div>
+      <div class="ip-gp__row">
+        <span class="ip-gp__meta"
+          >Meta {{ format() === 'money' ? fmt(tg) : tg }} · {{ fmt(actual()) }} ({{ p | number: '1.0-1' }}%)</span
+        >
+      </div>
+    </div>
+  }
+}

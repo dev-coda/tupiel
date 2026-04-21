@@ -168,7 +168,7 @@ async function main() {
     const filePath = outputPath || path.join(process.cwd(), `${defaultName}.csv`);
     const lines = [
       'Medifony',
-      `Fecha Generación:,${new Date().toISOString().split('T')[0]}`,
+      `Fecha Generación:,${new Date().toLocaleDateString('sv-SE')}`,
       '',
       headers.map(escape).join(','),
       ...dataRows.map((row) => row.map(escape).join(',')),
@@ -193,7 +193,7 @@ async function main() {
     ws.getCell('A1').font = { bold: true, size: 14 };
 
     // Row 2: Generation date
-    ws.addRow(['Fecha Generación:', new Date().toISOString().split('T')[0]]);
+    ws.addRow(['Fecha Generación:', new Date().toLocaleDateString('sv-SE')]);
 
     // Row 3: blank
     ws.addRow([]);

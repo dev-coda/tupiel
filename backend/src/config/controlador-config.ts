@@ -30,7 +30,6 @@ export interface ControladorConfig {
 
   // ── Product targets (manual) ──
   metaProductos: number;         // Monthly product sales target ($)
-  facturadoProductos: number;    // Product sales invoiced so far ($)
   botox: ProductTarget;
   radiesse: ProductTarget;
   harmonyca: ProductTarget;
@@ -62,7 +61,6 @@ export const DEFAULT_CONFIG: ControladorConfig = {
   lounge: [],
 
   metaProductos: 0,
-  facturadoProductos: 0,
 
   botox: { nombre: 'Botox', meta: 0, disponibles: 0 },
   radiesse: { nombre: 'Radiesse', meta: 0, disponibles: 0 },

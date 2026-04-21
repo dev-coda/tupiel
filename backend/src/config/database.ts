@@ -1,4 +1,5 @@
 import mysql, { Pool, PoolConnection } from 'mysql2/promise';
+import type { SslOptions } from 'mysql2/typings/mysql/lib/Connection.js';
 import dotenv from 'dotenv';
 import { readFileSync } from 'fs';
 import { join } from 'path';
@@ -68,10 +69,53 @@ if (!dbConfig.host || !dbConfig.user || !dbConfig.password) {
   );
 }
 
-console.log(`📊 Using ${useLocalDb ? 'LOCAL (DUMP)' : 'PRODUCTION (LIVE)'} database: ${dbConfig.host}:${dbConfig.port}/${dbConfig.database}`);
+/**
+ * DigitalOcean managed MySQL (and similar) expect TLS; mysql2 also avoids
+ * occasional "Malformed communication packet" issues when TLS matches the server.
+ * Set DB_SSL=false to disable. Optional DB_SSL_CA + DB_SSL_REJECT_UNAUTHORIZED=false|true.
+ */
+function getRemoteMysqlSsl(): SslOptions | undefined {
+  if (useLocalDb) return undefined;
+  const flag = process.env.DB_SSL?.toLowerCase();
+  if (flag === 'false' || flag === '0') return undefined;
+
+  const host = String(dbConfig.host || '');
+  const port =
+    typeof dbConfig.port === 'number'
+      ? dbConfig.port
+      : parseInt(String(dbConfig.port || '0'), 10);
+  const likelyManagedRemote =
+    flag === 'true' ||
+    flag === '1' ||
+    host.includes('ondigitalocean.com') ||
+    port === 25060;
+
+  if (!likelyManagedRemote) return undefined;
+
+  const ssl: SslOptions = {
+    rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false',
+  };
+  const caPath = process.env.DB_SSL_CA;
+  if (caPath) {
+    try {
+      ssl.ca = readFileSync(caPath, 'utf8');
+    } catch {
+      console.warn('DB_SSL_CA file not readable:', caPath);
+    }
+  }
+  if (!ssl.ca) {
+    ssl.rejectUnauthorized = false;
+  }
+  return ssl;
+}
+
+const mysqlSsl = getRemoteMysqlSsl();
+
+console.log(`📊 Using ${useLocalDb ? 'LOCAL (DUMP)' : 'PRODUCTION (LIVE)'} database: ${dbConfig.host}:${dbConfig.port}/${dbConfig.database}${mysqlSsl ? ' (TLS)' : ''}`);
 
 const pool: Pool = mysql.createPool({
   ...dbConfig,
+  ...(mysqlSsl ? { ssl: mysqlSsl } : {}),
   waitForConnections: true,
   connectionLimit: 5, // Limit connections to avoid overloading production
   queueLimit: 0,
@@ -93,7 +137,12 @@ export async function query(text: string, params?: (string | number | null)[]) {
     // Enforce read-only mode for safety
     await conn.query('SET SESSION TRANSACTION READ ONLY');
     const start = Date.now();
-    const [rows] = await conn.execute(text, params);
+    // Use text protocol (query) instead of prepared statements (execute): mysql2 + some
+    // MySQL 8 / proxy setups throw ER_MALFORMED_PACKET with execute() after READ ONLY.
+    const [rows] =
+      params === undefined
+        ? await conn.query(text)
+        : await conn.query(text, params);
     const duration = Date.now() - start;
     const rowCount = Array.isArray(rows) ? rows.length : 0;
     console.log('Executed query', { text: text.substring(0, 80), duration, rows: rowCount });

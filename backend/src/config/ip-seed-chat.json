@@ -1,0 +1,47 @@
+[
+  {
+    "id": 1,
+    "usuario": "admin",
+    "nombre": "Juan Rueda",
+    "avatar": "JR",
+    "texto": "¡Buenos días! Hoy tenemos 6 citas. Confirmen con Andrea antes de las 8am.",
+    "hora": "07:50",
+    "fecha": "2026-04-08"
+  },
+  {
+    "id": 2,
+    "usuario": "operario",
+    "nombre": "María López",
+    "avatar": "ML",
+    "texto": "Confirmado, le escribí a Andrea por WhatsApp y confirmó.",
+    "hora": "08:05",
+    "fecha": "2026-04-08"
+  },
+  {
+    "id": 3,
+    "usuario": "admin",
+    "nombre": "Juan Rueda",
+    "avatar": "JR",
+    "texto": "Sara Vargas lleva 5 meses sin visita. Toca llamarla esta semana con oferta PRODEEP.",
+    "hora": "08:20",
+    "fecha": "2026-04-08"
+  },
+  {
+    "id": 4,
+    "usuario": "operario",
+    "nombre": "María López",
+    "avatar": "ML",
+    "texto": "La llamo hoy después de las 3pm, antes de cerrar.",
+    "hora": "08:22",
+    "fecha": "2026-04-08"
+  },
+  {
+    "id": 5,
+    "usuario": "admin",
+    "nombre": "Juan Rueda",
+    "avatar": "JR",
+    "texto": "También revisar Juliana Peña — 3 intentos sin respuesta. Probar email.",
+    "hora": "09:10",
+    "fecha": "2026-04-08"
+  }
+]

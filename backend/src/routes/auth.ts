@@ -20,7 +20,7 @@ router.post('/login', async (req: Request, res: Response) => {
 
   try {
     const { rows } = await appQuery(
-      'SELECT id, username, name, password_hash FROM users WHERE username = ?',
+      'SELECT id, username, name, password_hash, ip_rol, ip_cargo FROM users WHERE username = ?',
       [username]
     );
 
@@ -29,7 +29,14 @@ router.post('/login', async (req: Request, res: Response) => {
       return;
     }
 
-    const user = rows[0] as { id: number; username: string; name: string; password_hash: string };
+    const user = rows[0] as {
+      id: number;
+      username: string;
+      name: string;
+      password_hash: string;
+      ip_rol: string;
+      ip_cargo: string | null;
+    };
     const passwordMatch = await bcrypt.compare(password, user.password_hash);
 
     if (!passwordMatch) {
@@ -37,7 +44,8 @@ router.post('/login', async (req: Request, res: Response) => {
       return;
     }
 
-    const token = generateToken({ id: user.id, username: user.username });
+    const ipRol = user.ip_rol === 'admin' ? 'admin' : 'operario';
+    const token = generateToken({ id: user.id, username: user.username, ipRol });
 
     res.json({
       token,
@@ -45,6 +53,8 @@ router.post('/login', async (req: Request, res: Response) => {
         id: user.id,
         username: user.username,
         name: user.name,
+        ipRol,
+        ipCargo: user.ip_cargo ?? '',
       },
     });
   } catch (err) {
@@ -61,7 +71,7 @@ router.post('/login', async (req: Request, res: Response) => {
 router.get('/me', requireAuth, async (req: Request, res: Response) => {
   try {
     const { rows } = await appQuery(
-      'SELECT id, username, name FROM users WHERE id = ?',
+      'SELECT id, username, name, ip_rol, ip_cargo FROM users WHERE id = ?',
       [req.user!.id]
     );
 
@@ -70,8 +80,23 @@ router.get('/me', requireAuth, async (req: Request, res: Response) => {
       return;
     }
 
-    const user = rows[0] as { id: number; username: string; name: string };
-    res.json({ user });
+    const row = rows[0] as {
+      id: number;
+      username: string;
+      name: string;
+      ip_rol: string;
+      ip_cargo: string | null;
+    };
+    const ipRol = row.ip_rol === 'admin' ? 'admin' : 'operario';
+    res.json({
+      user: {
+        id: row.id,
+        username: row.username,
+        name: row.name,
+        ipRol,
+        ipCargo: row.ip_cargo ?? '',
+      },
+    });
   } catch (err) {
     res.status(500).json({ error: 'Failed to get user info' });
   }

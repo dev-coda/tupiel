@@ -1,0 +1,124 @@
+<div class="ip-mt__backdrop" (click)="backdrop($event)">
+  <div class="ip-mt__panel" (click)="$event.stopPropagation()">
+    <div class="ip-mt__head">
+      <div>
+        <div class="ip-mt__title">{{ isNew ? 'Nueva Tarea' : (form['pacNombre'] || 'Editar Tarea') }}</div>
+        @if (!isNew && form['pacCelular']) {
+          <div class="ip-mt__cel">
+            <button type="button" class="ip-mt__copy" (click)="copiarCel()">📋 {{ form['pacCelular'] }}</button>
+          </div>
+        }
+      </div>
+      <button type="button" class="ip-mt__x" (click)="close.emit()">×</button>
+    </div>
+
+    @if (isNueva) {
+      <div class="ip-mt__banner">
+        <span>⚡</span>
+        <div>
+          <div class="ip-mt__banner-t">Tarea nueva — pendiente de diligenciar</div>
+          <div class="ip-mt__banner-d">Selecciona el tipo de acción y agrega una descripción para activar la tarea.</div>
+        </div>
+      </div>
+    }
+
+    @if (form['fichaOrigen'] || form['pacValor'] || form['fichaTicket'] || form['fichaActividad']) {
+      <div class="ip-mt__gc">
+        <div class="ip-mt__gc-l">Gestión Comercial</div>
+        <div class="ip-mt__gc-row">
+          @if (form['fichaOrigen']) {
+            <span class="ip-mt__pill ip-mt__pill--origen">📍 {{ form['fichaOrigen'] }}</span>
+          }
+          @if (pacValorPositive()) {
+            <span class="ip-mt__valor">{{ fM(pacValorNum()) }}</span>
+          }
+          @if (fichaTicketK()) {
+            <span class="ip-mt__pill" [style.background]="TICKET_COLOR[fichaTicketK()] + '22'" [style.color]="TICKET_COLOR[fichaTicketK()]">{{ TICKET_LABEL[fichaTicketK()] }}</span>
+          }
+          @if (fichaActividadK()) {
+            <span class="ip-mt__pill" [style.background]="ACTIV_COLOR[fichaActividadK()] + '22'" [style.color]="ACTIV_COLOR[fichaActividadK()]">{{ ACTIV_LABEL[fichaActividadK()] }}</span>
+          }
+          @if (form['fichaNotas']) {
+            <span class="ip-mt__notas">{{ fichaNotasPreview() }}</span>
+          }
+        </div>
+      </div>
+    }
+
+    @if (isNew) {
+      <div class="ip-mt__fld">
+        <label>Paciente</label>
+        <input
+          [ngModel]="form['pacNombre']"
+          (ngModelChange)="form['pacNombre'] = $event"
+          name="pacNombre"
+          placeholder="Nombre del paciente"
+          class="ip-mt__inp"
+        />
+      </div>
+    }
+
+    <div class="ip-mt__fld">
+      <label>Tipo de acción</label>
+      <div class="ip-mt__tipos">
+        @for (x of tipos; track x.key) {
+          <button
+            type="button"
+            class="ip-mt__tipo"
+            [class.ip-mt__tipo--on]="form['tipo'] === x.key"
+            (click)="form['tipo'] = x.key"
+          >
+            {{ x.icon }} {{ x.label }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <div class="ip-mt__fld">
+      <label>Descripción</label>
+      <textarea
+        [ngModel]="form['descripcion']"
+        (ngModelChange)="form['descripcion'] = $event"
+        name="descripcion"
+        rows="2"
+        placeholder="¿Qué hay que hacer?"
+        class="ip-mt__inp ip-mt__txt"
+      ></textarea>
+    </div>
+
+    <div class="ip-mt__fld">
+      <label>Registro de Contactos</label>
+      <div class="ip-mt__c-row">
+        <span class="ip-mt__c-l">Contacto 1</span>
+        <input type="date" [ngModel]="form['contacto1_fecha']" (ngModelChange)="form['contacto1_fecha'] = $event" name="cf1" class="ip-mt__inp ip-mt__date" />
+        <input [ngModel]="form['contacto1_nota']" (ngModelChange)="form['contacto1_nota'] = $event" name="cn1" placeholder="Resultado del contacto" class="ip-mt__inp ip-mt__grow" />
+      </div>
+      <div class="ip-mt__c-row">
+        <span class="ip-mt__c-l">Contacto 2</span>
+        <input type="date" [ngModel]="form['contacto2_fecha']" (ngModelChange)="form['contacto2_fecha'] = $event" name="cf2" class="ip-mt__inp ip-mt__date" />
+        <input [ngModel]="form['contacto2_nota']" (ngModelChange)="form['contacto2_nota'] = $event" name="cn2" placeholder="Resultado del contacto" class="ip-mt__inp ip-mt__grow" />
+      </div>
+      <div class="ip-mt__c-row">
+        <span class="ip-mt__c-l">Contacto 3</span>
+        <input type="date" [ngModel]="form['contacto3_fecha']" (ngModelChange)="form['contacto3_fecha'] = $event" name="cf3" class="ip-mt__inp ip-mt__date" />
+        <input [ngModel]="form['contacto3_nota']" (ngModelChange)="form['contacto3_nota'] = $event" name="cn3" placeholder="Resultado del contacto" class="ip-mt__inp ip-mt__grow" />
+      </div>
+    </div>
+
+    @if (form['estado'] !== 'ganado') {
+      <div class="ip-mt__win">
+        <span>¿El paciente agendó una cita?</span>
+        <button type="button" class="ip-mt__win-btn" (click)="marcarGanado()">🎉 Marcar como Ganado</button>
+      </div>
+    } @else {
+      <div class="ip-mt__won">🎉 Paciente ganado — agendó su cita</div>
+    }
+
+    <div class="ip-mt__foot">
+      <button type="button" class="ip-mt__cancel" (click)="close.emit()">Cancelar</button>
+      <button type="button" class="ip-mt__ok" (click)="handleSave()">
+        {{ isNew ? 'Crear Tarea' : isNueva ? 'Activar Tarea' : 'Guardar' }}
+      </button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,133 @@
+@use '../inteligencia-pacientes-tokens.scss' as *;
+
+:host {
+  display: block;
+}
+
+.ip-rep {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 0 0 1.5rem;
+}
+
+.ip-rep__head {
+  margin-bottom: 1rem;
+}
+
+.ip-rep__title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ip-text1);
+  margin: 0 0 0.35rem;
+}
+
+.ip-rep__sub {
+  font-size: 0.78rem;
+  color: var(--ip-text3);
+  line-height: 1.45;
+  margin: 0;
+}
+
+.ip-rep__err {
+  padding: 0.6rem 0.85rem;
+  border-radius: 6px;
+  background: rgba(214, 48, 49, 0.08);
+  border: 1px solid rgba(214, 48, 49, 0.25);
+  color: #c0392b;
+  font-size: 0.78rem;
+  margin-bottom: 1rem;
+}
+
+.ip-rep__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.ip-rep__card {
+  background: var(--ip-surface);
+  border: 1px solid var(--ip-line);
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.ip-rep__card-ic {
+  font-size: 1.25rem;
+}
+
+.ip-rep__card-t {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--ip-text1);
+}
+
+.ip-rep__card-d {
+  font-size: 0.68rem;
+  color: var(--ip-text4);
+  line-height: 1.35;
+  flex: 1;
+}
+
+.ip-rep__btn {
+  margin-top: 0.35rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--ip-line);
+  background: var(--ip-bg);
+  color: var(--ip-text2);
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: wait;
+  }
+
+  &--primary {
+    border-color: var(--ip-primary);
+    background: rgba(108, 99, 255, 0.1);
+    color: var(--ip-primary);
+  }
+}
+
+.ip-rep__full {
+  background: linear-gradient(135deg, rgba(108, 99, 255, 0.06), rgba(0, 184, 148, 0.05));
+  border: 1px solid rgba(108, 99, 255, 0.2);
+  border-radius: 10px;
+  padding: 1rem 1.15rem;
+  margin-bottom: 1rem;
+}
+
+.ip-rep__full-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+}
+
+.ip-rep__full-t {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--ip-primary);
+  width: 100%;
+}
+
+.ip-rep__full-d {
+  font-size: 0.72rem;
+  color: var(--ip-text3);
+  line-height: 1.4;
+  flex: 1;
+  min-width: 200px;
+}
+
+.ip-rep__note {
+  font-size: 0.7rem;
+  color: var(--ip-text4);
+  margin: 0;
+  line-height: 1.4;
+}

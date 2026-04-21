@@ -1,0 +1,277 @@
+<div class="ip-tg">
+  <div class="ip-tg__main">
+    <div class="ip-tg__stats">
+      @for (item of [
+        { label: 'TOTAL', val: conteos().todos, sub: 'en gestión', color: '', key: 'gestion_total' },
+        null,
+        { label: 'FIDELIZACIÓN', val: conteos().fidelizacion || 0, sub: 'activos', color: '#0984e3', key: 'gestion_fidelizacion' },
+        null,
+        { label: 'SEGUIMIENTO', val: conteos().seguimiento || 0, sub: 'activos', color: '#00b894', key: 'gestion_seguimiento' },
+        null,
+        { label: 'EXTRANJERO', val: conteos().extranjero || 0, sub: 'registrados', color: '#6c63ff', key: 'gestion_extranjero' },
+        null,
+        { label: 'DESCARTADOS', val: conteos().descartado || 0, sub: 'inactivos', color: '#b2bec3', key: 'gestion_descartado' },
+      ]; track $index) {
+        @if (item === null) {
+          <div class="ip-tg__vsep"></div>
+        } @else {
+          <div class="ip-tg__stat-col">
+            <div class="ip-tg__stat-lbl">{{ item.label }}</div>
+            <div class="ip-tg__stat-val" [style.color]="item.color || 'var(--ip-text1)'">{{ item.val }}</div>
+            <div class="ip-tg__stat-sub">{{ item.sub }}</div>
+            <app-ip-goal-progress [metricKey]="item.key" [actual]="item.val" format="int" />
+          </div>
+        }
+      }
+    </div>
+
+    <div class="ip-tg__filtros">
+      @for (e of estados; track e.key) {
+        <button
+          type="button"
+          class="ip-tg__pill"
+          [class.ip-tg__pill--on]="filtroEstado() === e.key"
+          [style.border-color]="filtroEstado() === e.key ? e.color : 'var(--ip-line)'"
+          [style.background]="filtroEstado() === e.key ? e.bg : 'var(--ip-surface)'"
+          [style.color]="filtroEstado() === e.key ? e.color : 'var(--ip-text3)'"
+          (click)="filtroEstado.set(e.key)"
+        >
+          {{ e.label }}
+          @if (conteoPill(e.key) > 0) {
+            <span
+              class="ip-tg__pill-n"
+              [style.background]="filtroEstado() === e.key ? 'rgba(255,255,255,.3)' : 'var(--ip-line2)'"
+              >{{ conteoPill(e.key) }}</span
+            >
+          }
+        </button>
+      }
+    </div>
+
+    @if (pacientesConFicha().length === 0) {
+      <div class="ip-tg__empty">Sin pacientes en seguimiento para este filtro</div>
+    } @else {
+      <div class="ip-tg__table-wrap">
+        <table class="ip-tg__table">
+          <thead>
+            <tr>
+              @for (h of ['Paciente', 'Estado', 'Ticket', 'Actividad', 'Origen', 'Notas', 'Acciones']; track h) {
+                <th>{{ h }}</th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of pacientesConFicha(); track p.doc; let i = $index) {
+              @let isExp = isExpanded(p.doc);
+              @let cfg = estadoCfg[p.ficha.estado] || {};
+              @let tCfg = p.ficha.ticket ? ticketCfg[p.ficha.ticket] : null;
+              @let aCfg = p.ficha.actividad ? actividadCfg[p.ficha.actividad] : null;
+              <tr
+                class="ip-tg__tr"
+                [class.ip-tg__tr--exp]="isExp"
+                [class.ip-tg__tr--stripe]="i % 2 === 1"
+              >
+                <td (click)="toggleExpand(p.doc)">
+                  <div class="ip-tg__pac">
+                    <div
+                      class="ip-tg__av"
+                      [style.background]="cfg.bg"
+                      [style.color]="cfg.color"
+                      >{{ ini(p.nombre) }}</div
+                    >
+                    <div>
+                      <div class="ip-tg__pac-n">
+                        {{ p.nombre }}
+                        <span class="ip-tg__chev">{{ isExp ? '▲' : '▼' }}</span>
+                      </div>
+                      <div class="ip-tg__pac-cel">{{ p.celular }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td (click)="toggleExpand(p.doc)">
+                  @if (cfg.label) {
+                    <span class="ip-tg__badge" [style.background]="cfg.bg" [style.color]="cfg.color">{{ cfg.label }}</span>
+                  }
+                </td>
+                <td (click)="toggleExpand(p.doc)">
+                  @if (tCfg) {
+                    <span class="ip-tg__badge" [style.background]="tCfg.bg" [style.color]="tCfg.color">{{ tCfg.label }}</span>
+                  } @else {
+                    <span class="ip-tg__dash">—</span>
+                  }
+                </td>
+                <td (click)="toggleExpand(p.doc)">
+                  @if (aCfg) {
+                    <span class="ip-tg__badge" [style.background]="aCfg.bg" [style.color]="aCfg.color">{{ aCfg.label }}</span>
+                  } @else {
+                    <span class="ip-tg__dash">—</span>
+                  }
+                </td>
+                <td (click)="toggleExpand(p.doc)">
+                  @if (p.ficha.origen) {
+                    <span class="ip-tg__origen">{{ p.ficha.origen }}</span>
+                  } @else {
+                    <span class="ip-tg__dash">—</span>
+                  }
+                </td>
+                <td (click)="toggleExpand(p.doc)">
+                  <div class="ip-tg__notas">{{ p.ficha.notas || '—' }}</div>
+                </td>
+                <td>
+                  <div class="ip-tg__actions">
+                    <button type="button" class="ip-tg__btn" (click)="$event.stopPropagation(); openModal(p)">Editar</button>
+                    <button
+                      type="button"
+                      class="ip-tg__btn ip-tg__btn--go"
+                      title="Enviar a Tareas"
+                      (click)="$event.stopPropagation(); enviarATareas(p)"
+                    >
+                      →
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              @if (isExp) {
+                <tr class="ip-tg__exp-tr">
+                  <td colspan="7">
+                    <div class="ip-tg__hoja">
+                      <div class="ip-tg__hoja-grid">
+                        @for (row of hojaKpis(p); track row.l) {
+                          <div class="ip-tg__hoja-cell">
+                            <div class="ip-tg__hoja-l">{{ row.l }}</div>
+                            <div class="ip-tg__hoja-v">{{ row.v }}</div>
+                          </div>
+                        }
+                      </div>
+                      @if (pacIndex()[p.doc]?.historial && pacIndex()[p.doc]!.historial!.length > 0) {
+                        <div class="ip-tg__hoja-hist">
+                          <div class="ip-tg__hoja-hist-t">Historial</div>
+                          @for (h of pacIndex()[p.doc]!.historial!; track $index) {
+                            <div class="ip-tg__hoja-hist-row">
+                              <div>
+                                <div class="ip-tg__hoja-hf">{{ fD(h.fecha) }}</div>
+                                <div class="ip-tg__hoja-hs">{{ h.subcategoria }}</div>
+                              </div>
+                              <div class="ip-tg__hoja-hv">{{ fM(h.valor) }}</div>
+                            </div>
+                          }
+                        </div>
+                      }
+                      <div class="ip-tg__hoja-side">
+                        <div class="ip-tg__hoja-h">Contacto</div>
+                        <button
+                          type="button"
+                          class="ip-tg__copy"
+                          [class.ip-tg__copy--on]="copiedCel()"
+                          (click)="$event.stopPropagation(); copiarCel(pacIndex()[p.doc]?.celular || p.celular || '—')"
+                        >
+                          {{ copiedCel() ? '✓ Copiado' : '📋 ' + (pacIndex()[p.doc]?.celular || p.celular || '—') }}
+                        </button>
+                        <div class="ip-tg__hoja-badges">
+                          @if (p.ficha.ticket && ticketCfg[p.ficha.ticket]; as tc) {
+                            <span class="ip-tg__badge" [style.background]="tc.bg" [style.color]="tc.color">{{ tc.label }}</span>
+                          }
+                          @if (p.ficha.actividad && actividadCfg[p.ficha.actividad]; as ac) {
+                            <span class="ip-tg__badge" [style.background]="ac.bg" [style.color]="ac.color">{{ ac.label }}</span>
+                          }
+                        </div>
+                        @if (p.ficha.notas) {
+                          <div class="ip-tg__hoja-notas">{{ p.ficha.notas.slice(0, 80) }}{{ p.ficha.notas.length > 80 ? '…' : '' }}</div>
+                        }
+                        <div class="ip-tg__hoja-btns">
+                          <button type="button" class="ip-tg__hoja-btn" (click)="$event.stopPropagation(); openModal(p)">
+                            {{ st.fichas()[p.doc] ? 'Editar Gestión' : '+ Ficha' }}
+                          </button>
+                          <button
+                            type="button"
+                            class="ip-tg__hoja-arrow"
+                            title="Enviar a Tareas"
+                            (click)="$event.stopPropagation(); enviarATareas(p)"
+                          >
+                            →
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</div>
+
+@if (st.user()?.rol === 'admin') {
+  <div class="ip-tg__audit">
+    <div class="ip-tg__audit-head">
+      <span>🔍</span>
+      <div>
+        <div class="ip-tg__audit-title">Auditoría de Gestión</div>
+        <div class="ip-tg__audit-sub">Fichas modificadas por el equipo</div>
+      </div>
+    </div>
+    <div class="ip-tg__audit-table-wrap">
+      <table class="ip-tg__audit-table">
+        <thead>
+          <tr>
+            @for (h of ['Paciente', 'Estado', 'Ticket', 'Actividad', 'Modificado Por', 'Fecha', 'Notas']; track h) {
+              <th>{{ h }}</th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @if (auditoriaRows().length === 0) {
+            <tr>
+              <td colspan="7" class="ip-tg__audit-empty">Sin modificaciones registradas aún</td>
+            </tr>
+          } @else {
+            @for (row of auditoriaRows(); track row[0]) {
+              @let doc = row[0];
+              @let f = row[1];
+              @let pac = pacIndex()[doc];
+              @let ecfg = estadoCfg[f.estado];
+              @let tc = f.ticket ? ticketCfg[f.ticket] : null;
+              @let ac = f.actividad ? actividadCfg[f.actividad] : null;
+              <tr class="ip-tg__audit-tr">
+                <td class="ip-tg__audit-pac">{{ pac?.nombre || doc }}</td>
+                <td>
+                  @if (ecfg) {
+                    <span class="ip-tg__badge" [style.background]="ecfg.bg" [style.color]="ecfg.color">{{ ecfg.label }}</span>
+                  }
+                </td>
+                <td>
+                  @if (tc) {
+                    <span class="ip-tg__badge" [style.background]="tc.bg" [style.color]="tc.color">{{ tc.label }}</span>
+                  }
+                </td>
+                <td>
+                  @if (ac) {
+                    <span class="ip-tg__badge" [style.background]="ac.bg" [style.color]="ac.color">{{ ac.label }}</span>
+                  }
+                </td>
+                <td
+                  class="ip-tg__audit-mp"
+                  [style.color]="f.modificadoPor === 'operario' ? 'var(--ip-green)' : 'var(--ip-primary)'"
+                  >{{ f.modificadoPor }}</td
+                >
+                <td class="ip-tg__audit-d">{{ f.modificadoEn || '—' }}</td>
+                <td><div class="ip-tg__notas">{{ f.notas || '—' }}</div></td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+}
+
+@if (modalPac(); as mp) {
+  <app-ip-modal-ficha
+    [pac]="mp"
+    [onCrearTarea]="true"
+    (close)="modalPac.set(null)"
+  />
+}

@@ -1,0 +1,57 @@
+<div class="ip-meta">
+  <header class="ip-meta__head">
+    <div>
+      <h1 class="ip-meta__title">Metas mensuales</h1>
+      <p class="ip-meta__sub">
+        Defina objetivos por mes. El avance se compara con los KPIs de cada pantalla usando el
+        <strong>mes de métricas</strong> (barra superior).
+      </p>
+    </div>
+    <div class="ip-meta__ym">
+      <label for="ip-meta-ym">Mes</label>
+      <input
+        id="ip-meta-ym"
+        type="month"
+        [ngModel]="st.metricsYm()"
+        (ngModelChange)="st.setMetricsYm($event)"
+      />
+    </div>
+  </header>
+
+  @if (saveMsg(); as ok) {
+    <div class="ip-meta__ok">{{ ok }}</div>
+  }
+  @if (saveErr(); as er) {
+    <div class="ip-meta__err" role="alert">{{ er }}</div>
+  }
+
+  @for (gr of groups; track gr.id) {
+    <section class="ip-meta__sec">
+      <h2 class="ip-meta__sec-t">{{ gr.label }}</h2>
+      <div class="ip-meta__grid">
+        @for (m of gr.metrics; track m.key) {
+          <div class="ip-meta__fld">
+            <label [for]="'g-' + m.key">{{ m.label }}</label>
+            @if (m.hint) {
+              <span class="ip-meta__hint">{{ m.hint }}</span>
+            }
+            <input
+              [id]="'g-' + m.key"
+              type="number"
+              min="0"
+              [attr.step]="m.format === 'money' ? 1000 : 1"
+              [value]="val(m.key)"
+              (input)="patch(m.key, ($any($event.target).value))"
+            />
+          </div>
+        }
+      </div>
+    </section>
+  }
+
+  <div class="ip-meta__actions">
+    <button type="button" class="ip-meta__btn" [disabled]="saving()" (click)="guardar()">
+      {{ saving() ? 'Guardando…' : 'Guardar metas del mes' }}
+    </button>
+  </div>
+</div>

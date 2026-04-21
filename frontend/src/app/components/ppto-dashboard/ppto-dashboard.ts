@@ -125,15 +125,15 @@ export class PptoDashboard implements OnInit {
   dailyChartData = computed(() => {
     const daily = this.dashData()?.dailyMetrics ?? [];
     const filtered = daily.filter(
-      (d) => d.serviciosPrestados > 0 || d.gestionComercial > 0
+      (d) => d.serviciosPrestados > 0 || d.gestionComercial > 0 || (d.productosFacturado ?? 0) > 0
     );
 
     const facturadoData = filtered.map((d) => d.facturado);
-    const carteraData = filtered.map((d) => d.cartera);
+    const productosData = filtered.map((d) => d.productosFacturado ?? 0);
     const gestionData = filtered.map((d) => d.gestionComercial);
     const metaData = filtered.map((d) => d.metaDia);
 
-    const sumM = (arr: number[]) => '$' + (arr.reduce((s, v) => s + v, 0) / 1_000_000).toFixed(3) + 'M';
+    const carteraData = filtered.map((d) => d.cartera);
 
     return {
       labels: filtered.map((d) => {
@@ -142,7 +142,7 @@ export class PptoDashboard implements OnInit {
       }),
       datasets: [
         {
-          label: `Facturado: ${sumM(facturadoData)}`,
+          label: 'Facturado',
           data: facturadoData,
           backgroundColor: 'rgba(34, 197, 94, 0.7)',
           borderColor: '#22c55e',
@@ -150,15 +150,23 @@ export class PptoDashboard implements OnInit {
           stack: 'servicios',
         },
         {
-          label: `Cartera: ${sumM(carteraData)}`,
+          label: 'Cartera',
           data: carteraData,
-          backgroundColor: 'rgba(249, 115, 22, 0.7)',
-          borderColor: '#f97316',
+          backgroundColor: 'rgba(251, 191, 36, 0.7)',
+          borderColor: '#f59e0b',
           borderWidth: 1,
           stack: 'servicios',
         },
         {
-          label: `Gestión Comercial (Est.): ${sumM(gestionData)}`,
+          label: 'Productos',
+          data: productosData,
+          backgroundColor: 'rgba(168, 85, 247, 0.7)',
+          borderColor: '#a855f7',
+          borderWidth: 1,
+          stack: 'productos',
+        },
+        {
+          label: 'Gestión Comercial (Est.)',
           data: gestionData,
           backgroundColor: 'rgba(59, 130, 246, 0.5)',
           borderColor: '#3b82f6',
@@ -167,7 +175,7 @@ export class PptoDashboard implements OnInit {
         },
         {
           type: 'line' as const,
-          label: `Meta Día: ${sumM(metaData)}`,
+          label: 'Meta Día',
           data: metaData,
           borderColor: '#ef4444',
           borderWidth: 2,
@@ -198,6 +206,21 @@ export class PptoDashboard implements OnInit {
           label: (ctx: any) => {
             const val = ctx.raw as number;
             return `${ctx.dataset.label}: $${val.toLocaleString('es-CO')}`;
+          },
+          afterBody: (items: any[]) => {
+            if (items.length === 0) return [];
+            const idx = items[0].dataIndex;
+            const ds = items[0].chart?.data?.datasets ?? [];
+            const fac = Number(ds[0]?.data?.[idx]) || 0;
+            const car = Number(ds[1]?.data?.[idx]) || 0;
+            const prod = Number(ds[2]?.data?.[idx]) || 0;
+            const fmt = (v: number) => '$' + v.toLocaleString('es-CO');
+            return [
+              '',
+              `Total Servicios: ${fmt(fac + car)}`,
+              `Total Productos: ${fmt(prod)}`,
+              `Total: ${fmt(fac + car + prod)}`,
+            ];
           },
         },
       },

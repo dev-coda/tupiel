@@ -1,0 +1,65 @@
+@if (pac(); as pac) {
+  <div class="ip-hv__backdrop" (click)="backdrop($event)">
+    <div class="ip-hv__panel" (click)="$event.stopPropagation()">
+      <div class="ip-hv__head">
+        <div class="ip-hv__av">{{ ini(pac.nombre) }}</div>
+        <div class="ip-hv__meta">
+          <div class="ip-hv__name">{{ pac.nombre }}</div>
+          @if (pac.celular) {
+            <button type="button" class="ip-hv__copy" (click)="copiar(pac.celular!)">
+              📋 {{ pac.celular }}
+              <span [class.ip-hv__copied]="copied()">{{ copied() ? '✓' : 'copiar' }}</span>
+            </button>
+          }
+        </div>
+        <button type="button" class="ip-hv__x" (click)="close.emit()">×</button>
+      </div>
+      <div class="ip-hv__body">
+        <div class="ip-hv__sec">Resumen</div>
+        <div class="ip-hv__grid">
+          @for (
+            row of [
+              { l: 'Visitas', v: pac.visitas || '—' },
+              { l: 'Valor Total', v: pac.valor_total ? fM(pac.valor_total) : '—' },
+              { l: 'Edad', v: pac.edad ? pac.edad + ' años' : '—' },
+              { l: 'Procedencia', v: pac.procedencia || '—' },
+              {
+                l: 'Primera Visita',
+                v: pac.historial?.length ? fDLg(pac.historial[pac.historial.length - 1].fecha) : '—',
+              },
+              { l: 'Última Visita', v: pac.ultima ? fDLg(pac.ultima) : '—' },
+            ];
+            track row.l
+          ) {
+            <div class="ip-hv__cell">
+              <div class="ip-hv__lbl">{{ row.l }}</div>
+              <div class="ip-hv__val">{{ row.v }}</div>
+            </div>
+          }
+        </div>
+        @if (pac.historial && pac.historial.length > 0) {
+          <div class="ip-hv__sec">Historial de Citas</div>
+          <div class="ip-hv__hist">
+            @for (h of pac.historial; track $index) {
+              <div class="ip-hv__hist-row">
+                <div>
+                  <div class="ip-hv__hf">{{ fDLg(h.fecha) }}</div>
+                  <div class="ip-hv__hs">{{ h.subcategoria }}</div>
+                </div>
+                <div class="ip-hv__hv">{{ fM(h.valor) }}</div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+} @else if (pacDoc()) {
+  <div class="ip-hv__backdrop" (click)="backdrop($event)">
+    <div class="ip-hv__empty" (click)="$event.stopPropagation()">
+      No hay historial registrado para este paciente.
+      <br />
+      <button type="button" class="ip-hv__btn" (click)="close.emit()">Cerrar</button>
+    </div>
+  </div>
+}

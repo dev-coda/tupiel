@@ -27,6 +27,11 @@ export class App implements OnInit {
       routerLink: '/ppto',
     },
     {
+      label: 'Inteligencia de Pacientes',
+      icon: 'pi pi-users',
+      routerLink: '/inteligencia-pacientes',
+    },
+    {
       label: 'Reportes',
       icon: 'pi pi-file-export',
       routerLink: '/reports',

@@ -8,6 +8,7 @@
 import { appQuery } from '../config/app-database';
 import { generateDashboardData } from './dashboard';
 import { generateControlador } from './controlador';
+import { toDateString } from '../utils/dates';
 import { generateRentabilidad } from './rentabilidad';
 import { generateEstimada } from './rentabilidad-estimada';
 import { getMonthlyConfigHistory } from './monthly-config';
@@ -35,7 +36,7 @@ function getTodayDateRange(): { from: string; to: string } {
   const year = today.getFullYear();
   const month = today.getMonth() + 1;
   const from = `${year}-${String(month).padStart(2, '0')}-01`;
-  const to = today.toISOString().substring(0, 10);
+  const to = toDateString(today);
   return { from, to };
 }
 
@@ -165,7 +166,7 @@ async function saveEstimadaReport(reportDate: string, dateFrom: string, dateTo: 
  */
 export async function saveAllReportsForToday(): Promise<void> {
   const today = new Date();
-  const reportDate = today.toISOString().substring(0, 10);
+  const reportDate = toDateString(today);
   const { from, to } = getTodayDateRange();
   
   console.log(`📊 Starting daily report save for ${reportDate} (${from} to ${to})`);
