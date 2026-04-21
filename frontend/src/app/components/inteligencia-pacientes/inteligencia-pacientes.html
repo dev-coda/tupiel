@@ -37,8 +37,16 @@
           <div class="ip-app__demo-zone">
             <button
               type="button"
+              class="ip-app__demo-reseed"
+              [disabled]="demoReseedBusy() || demoPurgeBusy()"
+              (click)="reseedDemoData()"
+            >
+              {{ demoReseedBusy() ? 'Restaurando…' : 'Restaurar catálogo demo' }}
+            </button>
+            <button
+              type="button"
               class="ip-app__demo-purge"
-              [disabled]="demoPurgeBusy()"
+              [disabled]="demoPurgeBusy() || demoReseedBusy()"
               (click)="purgeDemoData()"
             >
               {{ demoPurgeBusy() ? 'Eliminando demo…' : 'Eliminar datos demo' }}

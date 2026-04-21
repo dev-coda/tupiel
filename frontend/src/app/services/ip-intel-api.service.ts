@@ -147,6 +147,14 @@ export class IpIntelApiService {
     }>(`${this.basePath()}/demo-data`);
   }
 
+  /** Admin only: vuelve a insertar demo en tablas vacías (misma lógica que al arrancar el servidor). */
+  reseedDemoCatalog(): Observable<{ ok: boolean; message: string }> {
+    return this.http.post<{ ok: boolean; message: string }>(
+      `${this.basePath()}/demo-data/reseed`,
+      {}
+    );
+  }
+
   /** Sincronizar catálogo desde BD Medifony remota (misma conexión que PPTO). */
   syncFromMedifony(body: {
     dateFrom: string;

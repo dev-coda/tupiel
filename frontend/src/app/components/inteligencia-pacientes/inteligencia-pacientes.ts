@@ -43,6 +43,7 @@ export class InteligenciaPacientes implements OnInit {
   private readonly auth = inject(AuthService);
 
   readonly demoPurgeBusy = signal(false);
+  readonly demoReseedBusy = signal(false);
   readonly demoPurgeMsg = signal<string | null>(null);
   readonly demoPurgeErr = signal<string | null>(null);
 
@@ -120,6 +121,31 @@ export class InteligenciaPacientes implements OnInit {
         error: (e: { error?: { error?: string } }) =>
           this.demoPurgeErr.set(
             typeof e?.error?.error === 'string' ? e.error.error : 'No se pudo completar'
+          ),
+      });
+  }
+
+  reseedDemoData(): void {
+    if (this.st.user()?.rol !== 'admin') return;
+    const ok = window.confirm(
+      '¿Restaurar el catálogo de demostración en las tablas que estén vacías?\n\n' +
+        'No sobrescribe datos existentes.'
+    );
+    if (!ok) return;
+    this.demoReseedBusy.set(true);
+    this.demoPurgeMsg.set(null);
+    this.demoPurgeErr.set(null);
+    this.st
+      .reseedDemoCatalog()
+      .pipe(finalize(() => this.demoReseedBusy.set(false)))
+      .subscribe({
+        next: (r) => {
+          this.demoPurgeMsg.set(r.message || 'Listo.');
+          setTimeout(() => this.demoPurgeMsg.set(null), 6000);
+        },
+        error: (e: { error?: { error?: string } }) =>
+          this.demoPurgeErr.set(
+            typeof e?.error?.error === 'string' ? e.error.error : 'No se pudo restaurar'
           ),
       });
   }

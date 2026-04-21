@@ -163,6 +163,11 @@ export class IpStateService {
     return this.api.deleteDemoSeed().pipe(tap(() => this.hydrate()));
   }
 
+  /** Admin: reinserta demo solo donde la tabla siga vacía. */
+  reseedDemoCatalog(): Observable<{ ok: boolean; message: string }> {
+    return this.api.reseedDemoCatalog().pipe(tap(() => this.hydrate()));
+  }
+
   navigate(view: IpViewId) {
     this.activeView.set(view);
   }

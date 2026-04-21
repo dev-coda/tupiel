@@ -102,6 +102,112 @@ export function getIpPool(): Pool {
 }
 
 /**
+ * Inserts bundled demo rows for each table that is still empty (same rules as startup init).
+ * Safe to call again after data was deleted: only fills empty tables.
+ */
+export async function seedInteligenciaCatalogIfEmpty(conn: PoolConnection): Promise<void> {
+  const [ipPacCount] = await conn.query('SELECT COUNT(*) AS c FROM ip_pacientes');
+  if (isZeroCount((ipPacCount as Array<{ c: unknown }>)[0].c)) {
+    for (const p of pacientesSeed as Array<{ doc: string }>) {
+      await conn.execute('INSERT INTO ip_pacientes (doc, data_json) VALUES (?, ?)', [
+        p.doc,
+        JSON.stringify(p),
+      ]);
+    }
+    console.log('👥 Seeded ip_pacientes (Inteligencia demo catalog)');
+  }
+
+  const [ipAgendaCount] = await conn.query('SELECT COUNT(*) AS c FROM ip_agenda');
+  if (isZeroCount((ipAgendaCount as Array<{ c: unknown }>)[0].c)) {
+    for (const a of agendaSeed as Array<{ id: number }>) {
+      await conn.execute('INSERT INTO ip_agenda (id, data_json) VALUES (?, ?)', [
+        a.id,
+        JSON.stringify(a),
+      ]);
+    }
+    console.log('📅 Seeded ip_agenda (Inteligencia demo agenda)');
+  }
+
+  const [ipFichaCount] = await conn.query('SELECT COUNT(*) AS c FROM ip_fichas');
+  if (isZeroCount((ipFichaCount as Array<{ c: unknown }>)[0].c)) {
+    const fichas = fichasSeed as Record<string, Record<string, unknown>>;
+    for (const [doc, f] of Object.entries(fichas)) {
+      await conn.execute(
+        `INSERT INTO ip_fichas (paciente_doc, estado, ticket, actividad, notas, origen, modificado_por, modificado_en)
+         VALUES (?,?,?,?,?,?,?,?)`,
+        [
+          doc,
+          String(f.estado),
+          String(f.ticket),
+          String(f.actividad),
+          String(f.notas ?? ''),
+          f.origen != null ? String(f.origen) : null,
+          f.modificadoPor != null ? String(f.modificadoPor) : null,
+          f.modificadoEn != null ? String(f.modificadoEn) : null,
+        ]
+      );
+    }
+    console.log('📝 Seeded ip_fichas (Inteligencia demo fichas)');
+  }
+
+  const [ipChatCount] = await conn.query('SELECT COUNT(*) AS c FROM ip_chat_messages');
+  if (isZeroCount((ipChatCount as Array<{ c: unknown }>)[0].c)) {
+    for (const m of chatSeed as Array<Record<string, unknown>>) {
+      await conn.execute(
+        'INSERT INTO ip_chat_messages (usuario, nombre, avatar, texto, hora, fecha) VALUES (?,?,?,?,?,?)',
+        [
+          String(m.usuario),
+          String(m.nombre),
+          String(m.avatar),
+          String(m.texto),
+          String(m.hora),
+          String(m.fecha),
+        ]
+      );
+    }
+    console.log('💬 Seeded ip_chat_messages (Inteligencia demo chat)');
+  }
+
+  const [ipTareaCount] = await conn.query('SELECT COUNT(*) AS c FROM ip_tareas');
+  if (isZeroCount((ipTareaCount as Array<{ c: unknown }>)[0].c)) {
+    for (const row of IP_TAREAS_SEED) {
+      const [ins] = await conn.execute('INSERT INTO ip_tareas (data_json) VALUES (?)', [
+        JSON.stringify(row),
+      ]);
+      const insertId = (ins as ResultSetHeader).insertId;
+      await conn.execute('UPDATE ip_tareas SET data_json = ? WHERE id = ?', [
+        JSON.stringify({ ...row, id: insertId }),
+        insertId,
+      ]);
+    }
+    console.log('📋 Seeded ip_tareas (Inteligencia demo tasks)');
+  }
+}
+
+/**
+ * Re-runs demo seeding using the same rules as init (only empty tables). Admin use after bulk delete.
+ */
+export async function reseedInteligenciaDemoCatalog(): Promise<{
+  ok: boolean;
+  message: string;
+}> {
+  const pool = getIpPool();
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+    await seedInteligenciaCatalogIfEmpty(conn);
+    await conn.commit();
+    return { ok: true, message: 'Demo catalog applied where tables were empty.' };
+  } catch (err) {
+    await conn.rollback();
+    const msg = err instanceof Error ? err.message : String(err);
+    return { ok: false, message: msg };
+  } finally {
+    conn.release();
+  }
+}
+
+/**
  * Creates schema + demo seeds in the Inteligencia-only database.
  * Does not throw: failures are logged; the HTTP server can still start without CRM.
  */
@@ -211,82 +317,7 @@ export async function initInteligenciaDatabase(): Promise<void> {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
-    const [ipPacCount] = await conn.query('SELECT COUNT(*) AS c FROM ip_pacientes');
-    if (isZeroCount((ipPacCount as Array<{ c: unknown }>)[0].c)) {
-      for (const p of pacientesSeed as Array<{ doc: string }>) {
-        await conn.execute('INSERT INTO ip_pacientes (doc, data_json) VALUES (?, ?)', [
-          p.doc,
-          JSON.stringify(p),
-        ]);
-      }
-      console.log('👥 Seeded ip_pacientes (Inteligencia demo catalog)');
-    }
-
-    const [ipAgendaCount] = await conn.query('SELECT COUNT(*) AS c FROM ip_agenda');
-    if (isZeroCount((ipAgendaCount as Array<{ c: unknown }>)[0].c)) {
-      for (const a of agendaSeed as Array<{ id: number }>) {
-        await conn.execute('INSERT INTO ip_agenda (id, data_json) VALUES (?, ?)', [
-          a.id,
-          JSON.stringify(a),
-        ]);
-      }
-      console.log('📅 Seeded ip_agenda (Inteligencia demo agenda)');
-    }
-
-    const [ipFichaCount] = await conn.query('SELECT COUNT(*) AS c FROM ip_fichas');
-    if (isZeroCount((ipFichaCount as Array<{ c: unknown }>)[0].c)) {
-      const fichas = fichasSeed as Record<string, Record<string, unknown>>;
-      for (const [doc, f] of Object.entries(fichas)) {
-        await conn.execute(
-          `INSERT INTO ip_fichas (paciente_doc, estado, ticket, actividad, notas, origen, modificado_por, modificado_en)
-           VALUES (?,?,?,?,?,?,?,?)`,
-          [
-            doc,
-            String(f.estado),
-            String(f.ticket),
-            String(f.actividad),
-            String(f.notas ?? ''),
-            f.origen != null ? String(f.origen) : null,
-            f.modificadoPor != null ? String(f.modificadoPor) : null,
-            f.modificadoEn != null ? String(f.modificadoEn) : null,
-          ]
-        );
-      }
-      console.log('📝 Seeded ip_fichas (Inteligencia demo fichas)');
-    }
-
-    const [ipChatCount] = await conn.query('SELECT COUNT(*) AS c FROM ip_chat_messages');
-    if (isZeroCount((ipChatCount as Array<{ c: unknown }>)[0].c)) {
-      for (const m of chatSeed as Array<Record<string, unknown>>) {
-        await conn.execute(
-          'INSERT INTO ip_chat_messages (usuario, nombre, avatar, texto, hora, fecha) VALUES (?,?,?,?,?,?)',
-          [
-            String(m.usuario),
-            String(m.nombre),
-            String(m.avatar),
-            String(m.texto),
-            String(m.hora),
-            String(m.fecha),
-          ]
-        );
-      }
-      console.log('💬 Seeded ip_chat_messages (Inteligencia demo chat)');
-    }
-
-    const [ipTareaCount] = await conn.query('SELECT COUNT(*) AS c FROM ip_tareas');
-    if (isZeroCount((ipTareaCount as Array<{ c: unknown }>)[0].c)) {
-      for (const row of IP_TAREAS_SEED) {
-        const [ins] = await conn.execute('INSERT INTO ip_tareas (data_json) VALUES (?)', [
-          JSON.stringify(row),
-        ]);
-        const insertId = (ins as ResultSetHeader).insertId;
-        await conn.execute('UPDATE ip_tareas SET data_json = ? WHERE id = ?', [
-          JSON.stringify({ ...row, id: insertId }),
-          insertId,
-        ]);
-      }
-      console.log('📋 Seeded ip_tareas (Inteligencia demo tasks)');
-    }
+    await seedInteligenciaCatalogIfEmpty(conn);
 
     initOk = true;
     console.log('✅ Inteligencia de Pacientes database initialized');

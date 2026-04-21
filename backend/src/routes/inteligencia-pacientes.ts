@@ -5,7 +5,7 @@
  */
 import { Router, Request, Response } from 'express';
 import multer from 'multer';
-import { inteligenciaQuery, getIpPool } from '../config/ip-database';
+import { inteligenciaQuery, getIpPool, reseedInteligenciaDemoCatalog } from '../config/ip-database';
 import { PoolConnection } from 'mysql2/promise';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { parseAgendaExcel, parsePacientesExcel } from '../utils/ip-excel-import';
@@ -199,6 +199,29 @@ router.delete('/demo-data', async (req: Request, res: Response) => {
     const msg = err instanceof Error ? err.message : String(err);
     console.error('inteligencia-pacientes purge demo:', msg);
     res.status(500).json({ error: 'No se pudo eliminar el demo', detail: msg });
+  }
+});
+
+/**
+ * POST /api/inteligencia-pacientes/demo-data/reseed
+ * Admin only: re-inserts bundled demo rows for any ip_* table that is still empty (same as server init).
+ */
+router.post('/demo-data/reseed', async (req: Request, res: Response) => {
+  if (req.user?.ipRol !== 'admin') {
+    res.status(403).json({ error: 'Se requiere administrador de Inteligencia' });
+    return;
+  }
+  try {
+    const out = await reseedInteligenciaDemoCatalog();
+    if (!out.ok) {
+      res.status(500).json({ error: out.message });
+      return;
+    }
+    res.json({ ok: true, message: out.message });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('inteligencia-pacientes reseed demo:', msg);
+    res.status(500).json({ error: msg });
   }
 });
 

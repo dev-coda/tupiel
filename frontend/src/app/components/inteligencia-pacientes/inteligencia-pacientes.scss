@@ -163,6 +163,29 @@
   margin-bottom: 0.5rem;
 }
 
+.ip-app__demo-reseed {
+  width: 100%;
+  padding: 0.4rem 0.5rem;
+  margin-bottom: 0.35rem;
+  border-radius: 5px;
+  border: 1px solid color-mix(in srgb, var(--ip-green) 35%, var(--ip-line));
+  background: color-mix(in srgb, var(--ip-green) 8%, var(--ip-surface));
+  color: var(--ip-text2);
+  font-size: 0.62rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--ip-green) 14%, var(--ip-surface));
+    color: var(--ip-text1);
+  }
+
+  &:disabled {
+    opacity: 0.65;
+    cursor: wait;
+  }
+}
+
 .ip-app__demo-purge {
   width: 100%;
   padding: 0.4rem 0.5rem;
