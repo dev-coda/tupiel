@@ -381,6 +381,36 @@ tbody tr {
 .ip-pacientes__aside-doc {
   font-size: 0.66rem;
   color: var(--ip-text3);
+
+  &--btn {
+    display: block;
+    margin: 0;
+    padding: 0;
+    width: fit-content;
+    max-width: 100%;
+    text-align: left;
+    font-size: 0.66rem;
+    font-weight: 500;
+    color: var(--ip-text3);
+    background: none;
+    border: none;
+    cursor: pointer;
+    border-radius: 3px;
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, var(--ip-text3) 45%, transparent);
+    text-underline-offset: 2px;
+
+    &:hover {
+      color: var(--ip-primary);
+      text-decoration-color: var(--ip-primary);
+    }
+  }
+
+  &--ok {
+    color: var(--ip-green);
+    text-decoration: none;
+    font-weight: 700;
+  }
 }
 
 .ip-pacientes__aside-x {

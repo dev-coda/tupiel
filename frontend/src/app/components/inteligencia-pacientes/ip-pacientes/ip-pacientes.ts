@@ -38,6 +38,7 @@ export class IpPacientes {
   selected = signal<IpPaciente | null>(null);
   fichaModal = signal<IpPaciente | null>(null);
   copiedCel = signal(false);
+  copiedDoc = signal(false);
   importing = signal(false);
 
   subcats = SUBCATS;
@@ -141,6 +142,32 @@ export class IpPacientes {
     void navigator.clipboard.writeText(celular).then(() => {
       this.copiedCel.set(true);
       setTimeout(() => this.copiedCel.set(false), 1500);
+    });
+  }
+
+  /** Texto bajo el nombre (ej. CC 1000085672 si solo hay dígitos). */
+  docLine(doc: string): string {
+    const raw = (doc ?? '').trim();
+    if (!raw) return '—';
+    if (/^\d+$/.test(raw)) return `CC ${raw}`;
+    return raw;
+  }
+
+  /** Valor para portapapeles: solo dígitos, o documento sin prefijo CC. */
+  docToClipboard(doc: string): string {
+    const raw = (doc ?? '').trim();
+    if (!raw) return '';
+    if (/^\d+$/.test(raw)) return raw;
+    return raw.replace(/^cc\s*/i, '').replace(/\s+/g, '').trim() || raw;
+  }
+
+  copyDocumento(ev: Event, doc: string) {
+    ev.stopPropagation();
+    const text = this.docToClipboard(doc);
+    if (!text) return;
+    void navigator.clipboard.writeText(text).then(() => {
+      this.copiedDoc.set(true);
+      setTimeout(() => this.copiedDoc.set(false), 1500);
     });
   }
 

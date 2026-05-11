@@ -277,7 +277,15 @@
           <div class="ip-pacientes__aside-av">{{ ini(sel.nombre) }}</div>
           <div>
             <div class="ip-pacientes__aside-nm">{{ sel.nombre }}</div>
-            <div class="ip-pacientes__aside-doc">{{ sel.doc }}</div>
+            <button
+              type="button"
+              class="ip-pacientes__aside-doc ip-pacientes__aside-doc--btn"
+              [class.ip-pacientes__aside-doc--ok]="copiedDoc()"
+              (click)="copyDocumento($event, sel.doc)"
+              title="Clic para copiar el número de documento"
+            >
+              {{ copiedDoc() ? '✓ Copiado' : docLine(sel.doc) }}
+            </button>
           </div>
         </div>
         <button type="button" class="ip-pacientes__aside-x" (click)="selected.set(null)">×</button>
