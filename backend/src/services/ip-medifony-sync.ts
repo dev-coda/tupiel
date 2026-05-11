@@ -230,11 +230,15 @@ function aggToPacienteJson(g: Agg, dateFallback: string): PacienteImportJson {
   };
 }
 
+function sqlPlaceholders(n: number): string {
+  return n > 0 ? Array(n).fill('?').join(',') : '';
+}
+
 async function fetchCcByDocs(docs: string[]): Promise<CcRow[]> {
   if (docs.length === 0) return [];
   const out: CcRow[] = [];
   const chunk = 120;
-  const ccSql = `
+  const ccSqlTemplate = (inList: string) => `
     SELECT
       CONCAT(p.tipo_documento, ' ', TRIM(p.numero_documento)) AS doc,
       TRIM(CONCAT(p.nombres, ' ', p.apellidos)) AS nombre_paciente,
@@ -254,11 +258,12 @@ async function fetchCcByDocs(docs: string[]): Promise<CcRow[]> {
     JOIN personal per ON per.user_id = cc.personal_id
     JOIN cups cu ON cu.id = cc.cups_id
     LEFT JOIN sub_categoria sc ON sc.id = cu.sub_categoria_id
-    WHERE CONCAT(p.tipo_documento, ' ', TRIM(p.numero_documento)) IN (${docs.map(() => '?').join(',')})
+    WHERE CONCAT(p.tipo_documento, ' ', TRIM(p.numero_documento)) IN (${inList})
     ORDER BY cc.fecha_realizacion ASC
   `;
   for (let i = 0; i < docs.length; i += chunk) {
     const part = docs.slice(i, i + chunk);
+    const ccSql = ccSqlTemplate(sqlPlaceholders(part.length));
     const r = await query(ccSql, part);
     out.push(...(r.rows as unknown as CcRow[]));
   }
@@ -269,7 +274,7 @@ async function fetchPacienteStubs(docs: string[]): Promise<Map<string, Partial<A
   const map = new Map<string, Partial<Agg>>();
   if (docs.length === 0) return map;
   const chunk = 120;
-  const sql = `
+  const sqlTemplate = (inList: string) => `
     SELECT
       CONCAT(p.tipo_documento, ' ', TRIM(p.numero_documento)) AS doc,
       TRIM(CONCAT(p.nombres, ' ', p.apellidos)) AS nombre_paciente,
@@ -278,10 +283,11 @@ async function fetchPacienteStubs(docs: string[]): Promise<Map<string, Partial<A
       p.recomendacion_id,
       p.pais_origen_id
     FROM paciente p
-    WHERE CONCAT(p.tipo_documento, ' ', TRIM(p.numero_documento)) IN (${docs.map(() => '?').join(',')})
+    WHERE CONCAT(p.tipo_documento, ' ', TRIM(p.numero_documento)) IN (${inList})
   `;
   for (let i = 0; i < docs.length; i += chunk) {
     const part = docs.slice(i, i + chunk);
+    const sql = sqlTemplate(sqlPlaceholders(part.length));
     const r = await query(sql, part);
     for (const row of r.rows as unknown as Array<{
       doc: string;
