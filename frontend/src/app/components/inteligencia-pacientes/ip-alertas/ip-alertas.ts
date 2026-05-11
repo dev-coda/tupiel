@@ -60,7 +60,7 @@ export class IpAlertas {
   expanded = signal<Record<string, boolean>>({});
   copiedKey = signal<string | null>(null);
 
-  f5 = signal({ actividad: 'Todas' as string });
+  f5 = signal({ actividad: 'Todas' as string, desde: '', hasta: '' });
   f1 = signal({ dias: '', valorMin: '', profesional: 'Todos' });
   f2 = signal({ dias: '', valorMin: '', profesional: 'Todos' });
   f3 = signal({ sesiones: '', cups: 'Todos', subcat: 'Todas', profesional: 'Todos' });
@@ -109,9 +109,14 @@ export class IpAlertas {
 
   a5 = computed(() => {
     let d = this.a5base();
-    if (this.f5().actividad !== 'Todas') {
-      d = d.filter((p) => p.ficha.actividad === this.f5().actividad);
+    const f = this.f5();
+    if (f.actividad !== 'Todas') {
+      d = d.filter((p) => p.ficha.actividad === f.actividad);
     }
+    const d0 = (f.desde ?? '').toString().trim().slice(0, 10);
+    const d1 = (f.hasta ?? '').toString().trim().slice(0, 10);
+    if (d0) d = d.filter((p) => (p.ultima ?? '').slice(0, 10) >= d0);
+    if (d1) d = d.filter((p) => (p.ultima ?? '').slice(0, 10) <= d1);
     return d;
   });
 

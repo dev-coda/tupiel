@@ -163,6 +163,12 @@
     width: 110px;
   }
 
+  input[type='date'] {
+    min-width: 9.5rem;
+    width: auto;
+  }
+
+  input.ip-alertas__sel-act,
   select.ip-alertas__sel-act {
     border-color: var(--ip-primary);
     background: rgba(108, 99, 255, 0.06);

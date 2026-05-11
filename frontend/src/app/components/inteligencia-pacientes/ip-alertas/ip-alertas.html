@@ -722,6 +722,24 @@
             }
           </select>
         </div>
+        <div class="ip-alertas__fld" title="Filtra por la fecha de última atención registrada">
+          <label>Desde (última visita)</label>
+          <input
+            type="date"
+            [ngModel]="f5().desde"
+            (ngModelChange)="f5.set({ ...f5(), desde: $event })"
+            [class.ip-alertas__sel-act]="!!f5().desde"
+          />
+        </div>
+        <div class="ip-alertas__fld" title="Filtra por la fecha de última atención registrada">
+          <label>Hasta (última visita)</label>
+          <input
+            type="date"
+            [ngModel]="f5().hasta"
+            (ngModelChange)="f5.set({ ...f5(), hasta: $event })"
+            [class.ip-alertas__sel-act]="!!f5().hasta"
+          />
+        </div>
       </div>
       @if (a5().length === 0) {
         <div class="ip-alertas__empty">Sin resultados para los filtros seleccionados</div>
