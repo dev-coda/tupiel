@@ -408,15 +408,23 @@
         </div>
         <div class="ip-alertas__fld">
           <label>Subcategoría</label>
-          <select [ngModel]="f3().subcat" (ngModelChange)="f3.set({ ...f3(), subcat: $event })">
+          <select [ngModel]="f3().subcat" (ngModelChange)="f3.set({ ...f3(), subcat: $event })" [class.ip-alertas__sel-act]="f3().subcat !== 'Todas'">
             @for (s of subcats; track s) {
               <option [value]="s">{{ s }}</option>
             }
           </select>
         </div>
         <div class="ip-alertas__fld">
+          <label>CUPS</label>
+          <select [ngModel]="f3().cups" (ngModelChange)="f3.set({ ...f3(), cups: $event })" [class.ip-alertas__sel-act]="f3().cups !== 'Todos'">
+            @for (c of cupsA3Options(); track c) {
+              <option [value]="c">{{ c }}</option>
+            }
+          </select>
+        </div>
+        <div class="ip-alertas__fld">
           <label>Profesional</label>
-          <select [ngModel]="f3().profesional" (ngModelChange)="f3.set({ ...f3(), profesional: $event })">
+          <select [ngModel]="f3().profesional" (ngModelChange)="f3.set({ ...f3(), profesional: $event })" [class.ip-alertas__sel-act]="f3().profesional !== 'Todos'">
             @for (p of profesionales(); track p) {
               <option [value]="p">{{ p }}</option>
             }

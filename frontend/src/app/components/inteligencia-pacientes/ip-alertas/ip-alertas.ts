@@ -63,12 +63,24 @@ export class IpAlertas {
   f5 = signal({ actividad: 'Todas' as string });
   f1 = signal({ dias: '', valorMin: '', profesional: 'Todos' });
   f2 = signal({ dias: '', valorMin: '', profesional: 'Todos' });
-  f3 = signal({ sesiones: '', subcat: 'Todas', profesional: 'Todos' });
+  f3 = signal({ sesiones: '', cups: 'Todos', subcat: 'Todas', profesional: 'Todos' });
   f4 = signal({ cups: 'Todos', subcat: 'Todas', dias: '', profesional: 'Todos' });
 
   estadoCfg = ESTADO_CFG;
   subcats = SUBCATS;
   cupsList = CUPS_LIST;
+  /** CUPS vistos en historial de pacientes + catálogo demo. */
+  cupsA3Options = computed(() => {
+    const set = new Set<string>();
+    this.st.pacientes().forEach((p) => {
+      (p.historial ?? []).forEach((h) => {
+        const c = (h.cups ?? '').trim();
+        if (c) set.add(c);
+      });
+    });
+    CUPS_LIST.filter((c) => c !== 'Todos').forEach((c) => set.add(c));
+    return ['Todos', ...Array.from(set).sort((a, b) => a.localeCompare(b))];
+  });
   profesionales = computed(() => [
     'Todos',
     ...new Set(this.st.pacientes().map((p) => p.profesional)),
@@ -176,6 +188,11 @@ export class IpAlertas {
     let d = this.a3base();
     const f = this.f3();
     if (f.sesiones) d = d.filter((p) => p.sesiones >= Number(f.sesiones));
+    if (f.cups !== 'Todos') {
+      d = d.filter((row) =>
+        (row.historial ?? []).some((h) => h.cups === f.cups && h.subcategoria === row.subcat)
+      );
+    }
     if (f.subcat !== 'Todas') d = d.filter((p) => p.subcat === f.subcat);
     if (f.profesional !== 'Todos') d = d.filter((p) => p.profesional === f.profesional);
     return d;
