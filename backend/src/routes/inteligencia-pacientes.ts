@@ -702,6 +702,9 @@ router.post('/import/agenda', upload.single('file'), async (req: Request, res: R
  * Body: { dateFrom, dateTo, replacePacientesCatalog?, replaceAgendaCatalog?,
  *         fullHistorialServicios?, includeAgendaOnlyPacientes? }
  * Lee paciente + consulta_cups + agenda en la BD remota (Medifony / misma que PPTO) y escribe ip_*.
+ *
+ * La sincronización puede durar minutos (carga inicial + historial completo). Si nginx/proxy corta
+ * con 504, suba `proxy_read_timeout` / equivalente. El backend serializa peticiones concurrentes a esta ruta.
  */
 router.post('/sync/medifony', async (req: Request, res: Response) => {
   const b = req.body as {

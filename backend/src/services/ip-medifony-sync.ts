@@ -234,6 +234,63 @@ function sqlPlaceholders(n: number): string {
   return n > 0 ? Array(n).fill('?').join(',') : '';
 }
 
+/** Fewer round-trips than single-row executes; keeps transactions shorter under large catalogs. */
+const UPSERT_BATCH = 80;
+
+async function batchUpsertPacientes(
+  conn: PoolConnection,
+  pairs: Array<[string, string]>
+): Promise<number> {
+  let n = 0;
+  for (let i = 0; i < pairs.length; i += UPSERT_BATCH) {
+    const slice = pairs.slice(i, i + UPSERT_BATCH);
+    const ph = slice.map(() => '(?, ?)').join(', ');
+    const flat = slice.flat();
+    await conn.execute(
+      `INSERT INTO ip_pacientes (doc, data_json) VALUES ${ph}
+       ON DUPLICATE KEY UPDATE data_json = VALUES(data_json), updated_at = CURRENT_TIMESTAMP`,
+      flat
+    );
+    n += slice.length;
+  }
+  return n;
+}
+
+async function batchUpsertAgenda(
+  conn: PoolConnection,
+  pairs: Array<[number, string]>
+): Promise<number> {
+  let n = 0;
+  for (let i = 0; i < pairs.length; i += UPSERT_BATCH) {
+    const slice = pairs.slice(i, i + UPSERT_BATCH);
+    const ph = slice.map(() => '(?, ?)').join(', ');
+    const flat = slice.flat();
+    await conn.execute(
+      `INSERT INTO ip_agenda (id, data_json) VALUES ${ph}
+       ON DUPLICATE KEY UPDATE data_json = VALUES(data_json), updated_at = CURRENT_TIMESTAMP`,
+      flat
+    );
+    n += slice.length;
+  }
+  return n;
+}
+
+const WARNINGS_CAP = 400;
+
+function pushWarn(warnings: string[], msg: string): void {
+  if (warnings.length >= WARNINGS_CAP) return;
+  warnings.push(msg);
+}
+
+function capWarnings(warnings: string[]): string[] {
+  if (warnings.length <= WARNINGS_CAP) return warnings;
+  const extra = warnings.length - WARNINGS_CAP + 1;
+  return [
+    ...warnings.slice(0, WARNINGS_CAP - 1),
+    `…y ${extra} advertencias más (respuesta truncada)`,
+  ];
+}
+
 async function fetchCcByDocs(docs: string[]): Promise<CcRow[]> {
   if (docs.length === 0) return [];
   const out: CcRow[] = [];
@@ -312,9 +369,7 @@ async function fetchPacienteStubs(docs: string[]): Promise<Map<string, Partial<A
   return map;
 }
 
-export async function syncMedifonyToInteligencia(
-  opts: MedifonySyncOptions
-): Promise<MedifonySyncResult> {
+async function executeMedifonySync(opts: MedifonySyncOptions): Promise<MedifonySyncResult> {
   const warnings: string[] = [];
   const dateFrom = String(opts.dateFrom || '').trim().slice(0, 10);
   const dateTo = String(opts.dateTo || '').trim().slice(0, 10);
@@ -402,7 +457,8 @@ export async function syncMedifonyToInteligencia(
     ORDER BY a.id ASC
   `;
 
-  const agResult = await query(agendaSql, [dateFrom, dateTo]);
+  /** Mismo criterio que consulta_cups: último día inclusive hasta 23:59:59 (evita perder citas con hora si la columna es DATETIME). */
+  const agResult = await query(agendaSql, [dateFrom, dateToEnd]);
   const agendaRows = agResult.rows as unknown as AgendaRow[];
 
   const agendaMaxFecha = new Map<string, string>();
@@ -431,7 +487,7 @@ export async function syncMedifonyToInteligencia(
       for (const doc of missing) {
         const s = stubs.get(doc);
         if (!s) {
-          warnings.push(`Paciente ${doc}: no encontrado en tabla paciente`);
+          pushWarn(warnings, `Paciente ${doc}: no encontrado en tabla paciente`);
           continue;
         }
         const ultima = agendaMaxFecha.get(doc) || dateTo;
@@ -480,6 +536,16 @@ export async function syncMedifonyToInteligencia(
     byDoc = rebuilt;
   }
 
+  console.info('[medifony-sync] start', {
+    dateFrom,
+    dateTo,
+    docs: byDoc.size,
+    agendaRemoteRows: agendaRows.length,
+    replacePacientes: !!opts.replacePacientesCatalog,
+    replaceAgenda: !!opts.replaceAgendaCatalog,
+    fullHistorial: !!opts.fullHistorialServicios,
+  });
+
   const pool = getIpPool();
   let conn: PoolConnection | undefined;
   try {
@@ -493,29 +559,25 @@ export async function syncMedifonyToInteligencia(
       await conn.execute('DELETE FROM ip_agenda');
     }
 
-    let pacN = 0;
+    const pacPairs: Array<[string, string]> = [];
     for (const g of byDoc.values()) {
       const pj = aggToPacienteJson(g, dateTo);
-      await conn.execute(
-        `INSERT INTO ip_pacientes (doc, data_json) VALUES (?, ?)
-         ON DUPLICATE KEY UPDATE data_json = VALUES(data_json), updated_at = CURRENT_TIMESTAMP`,
-        [pj.doc, JSON.stringify(pj)]
-      );
-      pacN++;
+      pacPairs.push([pj.doc, JSON.stringify(pj)]);
     }
+    const pacN = await batchUpsertPacientes(conn, pacPairs);
 
-    let agN = 0;
+    const agendaPairs: Array<[number, string]> = [];
     for (const ar of agendaRows) {
       const id = num(ar.id);
       if (!id) continue;
       const fd = ymd(ar.fecha_slot);
       if (!fd || fd < '1900-01-01') {
-        warnings.push(`Agenda id=${id}: fecha inválida, omitida`);
+        pushWarn(warnings, `Agenda id=${id}: fecha inválida, omitida`);
         continue;
       }
       const doc = normDoc(String(ar.doc || ''));
       if (!doc) {
-        warnings.push(`Agenda id=${id}: sin documento paciente, omitida`);
+        pushWarn(warnings, `Agenda id=${id}: sin documento paciente, omitida`);
         continue;
       }
       const horaRaw = String(ar.hora_slot || '09:00');
@@ -531,15 +593,18 @@ export async function syncMedifonyToInteligencia(
         subcategoria: String(ar.subcategoria || '').trim() || '—',
         valor: num(ar.valor),
       };
-      await conn.execute(
-        `INSERT INTO ip_agenda (id, data_json) VALUES (?, ?)
-         ON DUPLICATE KEY UPDATE data_json = VALUES(data_json), updated_at = CURRENT_TIMESTAMP`,
-        [id, JSON.stringify(row)]
-      );
-      agN++;
+      agendaPairs.push([id, JSON.stringify(row)]);
     }
+    const agN = await batchUpsertAgenda(conn, agendaPairs);
 
     await conn.commit();
+
+    const warningsOut = capWarnings(warnings);
+    console.info('[medifony-sync] done', {
+      pacientesUpserted: pacN,
+      agendaUpserted: agN,
+      warnings: warningsOut.length,
+    });
 
     return {
       ok: true,
@@ -552,7 +617,7 @@ export async function syncMedifonyToInteligencia(
         : undefined,
       agendaUpserted: agN,
       pacientesAgendaOnly,
-      warnings,
+      warnings: warningsOut,
     };
   } catch (e) {
     if (conn) await conn.rollback();
@@ -560,4 +625,16 @@ export async function syncMedifonyToInteligencia(
   } finally {
     if (conn) conn.release();
   }
+}
+
+/** Serializa sincronizaciones: evita dos POST solapados con DELETE/replace entremezclados. */
+let medifonySyncChain: Promise<void> = Promise.resolve();
+
+export function syncMedifonyToInteligencia(opts: MedifonySyncOptions): Promise<MedifonySyncResult> {
+  const job = medifonySyncChain.then(() => executeMedifonySync(opts));
+  medifonySyncChain = job.then(
+    () => undefined,
+    () => undefined
+  );
+  return job;
 }
