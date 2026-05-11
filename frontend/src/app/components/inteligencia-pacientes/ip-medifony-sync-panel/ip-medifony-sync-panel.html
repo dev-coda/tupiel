@@ -30,6 +30,9 @@
     <span class="ip-mfs__sep">—</span>
     <label class="ip-mfs__lbl">Hasta</label>
     <input class="ip-mfs__date" type="date" [ngModel]="syncTo()" (ngModelChange)="syncTo.set($event)" />
+    <button type="button" class="ip-mfs__ym-btn" [disabled]="syncing()" (click)="usarMesMetricas()" title="Copia el mes del selector «Mes métricas» arriba">
+      Usar mes métricas
+    </button>
     <button
       type="button"
       class="ip-mfs__btn"

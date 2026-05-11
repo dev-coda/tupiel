@@ -20,6 +20,19 @@ function todayYmd(): string {
   return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`;
 }
 
+/** `ym` = YYYY-MM → first and last calendar day (local). */
+function rangeFromMetricsYm(ym: string): { from: string; to: string } | null {
+  const v = ym.slice(0, 7);
+  if (!/^\d{4}-\d{2}$/.test(v)) return null;
+  const y = Number(v.slice(0, 4));
+  const m = Number(v.slice(5, 7));
+  if (!Number.isFinite(y) || m < 1 || m > 12) return null;
+  const from = `${y}-${String(m).padStart(2, '0')}-01`;
+  const lastD = new Date(y, m, 0).getDate();
+  const to = `${y}-${String(m).padStart(2, '0')}-${String(lastD).padStart(2, '0')}`;
+  return { from, to };
+}
+
 /** Barra reutilizable: sync Medifony en vistas Pacientes y Agenda. */
 @Component({
   selector: 'app-ip-medifony-sync-panel',
@@ -68,6 +81,14 @@ export class IpMedifonySyncPanel {
     this.sync();
   }
 
+  /** Alinea Desde/Hasta con el «Mes métricas» del encabezado (Inteligencia). */
+  usarMesMetricas(): void {
+    const r = rangeFromMetricsYm(this.st.metricsYm());
+    if (!r) return;
+    this.syncFrom.set(r.from);
+    this.syncTo.set(r.to);
+  }
+
   syncing = signal(false);
   err = signal<string | null>(null);
   ok = signal<string | null>(null);
@@ -94,9 +115,17 @@ export class IpMedifonySyncPanel {
             r.serviciosLinesFullHistorial != null
               ? ` · ${r.serviciosLinesFullHistorial} líneas servicios (historial completo)`
               : ` · ${r.serviciosLines} líneas servicios en rango`;
-          this.ok.set(
-            `OK: ${r.pacientesUpserted} pacientes${extra}${hist} · ${r.agendaUpserted} citas agenda`
-          );
+          let msg = `OK: ${r.pacientesUpserted} pacientes${extra}${hist} · ${r.agendaUpserted} citas agenda`;
+          if (
+            r.pacientesUpserted === 0 &&
+            r.agendaUpserted === 0 &&
+            r.serviciosLines === 0 &&
+            (r.serviciosLinesFullHistorial == null || r.serviciosLinesFullHistorial === 0)
+          ) {
+            msg +=
+              ' · Medifony no devolvió filas en este rango (fechas/filtros). Amplíe fechas, use «Usar mes métricas» o «Carga inicial».';
+          }
+          this.ok.set(msg);
           this.st.hydrate();
         },
         error: (e) =>
